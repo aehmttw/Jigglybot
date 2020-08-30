@@ -1,6 +1,7 @@
 package location;
 
 import monster.Monster;
+import monster.Species;
 
 import java.util.ArrayList;
 
@@ -130,7 +131,7 @@ public class Location
         indigo_plateau.neighbors = new Location[]{victory_road};
     }
 
-    public void spawn()
+    public Monster spawn()
     {
         int total = 0;
         int current = 0;
@@ -154,13 +155,14 @@ public class Location
         Monster m;
 
         if (Math.random() < 0.0001)
-        {
-
-        }
+            m = new Monster(Species.by_name.get("mew"), (int) (Math.random() * 100 + 1));
         else
         {
-
+            int level = spawnEntry.levels[(int) (Math.random() * spawnEntry.levels.length)];
+            m = new Monster(spawnEntry.species, level);
         }
+
+        return m;
     }
 
     public Location(String name)

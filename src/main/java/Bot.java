@@ -5,6 +5,7 @@ import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
 import location.Location;
+import monster.Monster;
 import monster.Species;
 
 public class Bot
@@ -26,6 +27,10 @@ public class Bot
             MessageChannel channel = message.getChannel().block();
             String content = message.getContent().toLowerCase();
             Member m = message.getAuthorAsMember().block();
+
+            if (m == null || channel == null)
+                return;
+
             UserWrapper user = UserWrapper.get(m);
 
             if (content.startsWith(prefix + "loc"))
@@ -36,6 +41,17 @@ public class Bot
             if (content.startsWith(prefix + "love"))
             {
                 channel.createMessage("Jigglybot loves all of you <3 !").block();
+            }
+
+            if (content.startsWith(prefix + "spawn"))
+            {
+                if (user.location.spawnEntries.isEmpty())
+                    channel.createMessage("Nothing spawns in " + user.location.name + "!").block();
+                else
+                {
+                    Monster monster = user.location.spawn();
+                    channel.createMessage("Wild L" + monster.level + " " + monster.name.toUpperCase() + " appeared!").block();
+                }
             }
 
             if (content.startsWith(prefix + "dex"))
@@ -52,7 +68,7 @@ public class Bot
                     try
                     {
                         int num = Integer.parseInt(arg);
-                        Species s = Species.speciesByNum.get(num);
+                        Species s = Species.by_num.get(num);
 
                         if (s == null)
                             fail = true;
@@ -61,7 +77,7 @@ public class Bot
                     }
                     catch (Exception e)
                     {
-                        Species s = Species.speciesByName.get(arg.toLowerCase());
+                        Species s = Species.by_name.get(arg.toLowerCase());
 
                         if (s == null)
                             fail = true;

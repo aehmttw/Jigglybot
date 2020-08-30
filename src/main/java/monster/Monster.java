@@ -39,6 +39,15 @@ public class Monster
 
     public boolean isWild = true;
 
+    public Monster(Species species, int level)
+    {
+        this.species = species;
+        this.setLevel(level);
+        this.recalculateStats();
+        this.catchRate = species.catchRate;
+        this.name = species.name;
+    }
+
     public void damage(Monster enemy, double power, boolean special, boolean crit, double modifier)
     {
         double critBonus = 1;

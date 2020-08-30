@@ -27,8 +27,8 @@ public class Species
     public final HashMap<Integer, Move> moveUnlocks = new HashMap<>();
     public final ArrayList<Move> learnableMoves = new ArrayList<>();
 
-    public static final HashMap<Integer, Species> speciesByNum = new HashMap<>();
-    public static final HashMap<String, Species> speciesByName = new HashMap<>();
+    public static final HashMap<Integer, Species> by_num = new HashMap<>();
+    public static final HashMap<String, Species> by_name = new HashMap<>();
 
     public static final int xp_slow = 0;
     public static final int xp_medium_slow = 1;
@@ -52,8 +52,8 @@ public class Species
         this.xpGain = xpGain;
         this.catchRate = catchRate;
 
-        speciesByName.put(name.toLowerCase(), this);
-        speciesByNum.put(this.id, this);
+        by_name.put(name.toLowerCase(), this);
+        by_num.put(this.id, this);
     }
 
     public Species(String name, int type1, int baseHP, int baseAttack, int baseDefense, int baseSpeed, int baseSpecial, int xpAward, int xpGain, int catchRate)

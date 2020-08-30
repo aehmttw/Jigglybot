@@ -1,6 +1,5 @@
 package location;
 
-import discord4j.core.spec.Spec;
 import monster.Species;
 
 public class SpawnEntry
@@ -11,7 +10,7 @@ public class SpawnEntry
 
     public SpawnEntry(String species, int[] levels, int weight)
     {
-        this.species = Species.speciesByName.get(species);
+        this.species = Species.by_name.get(species);
         this.levels = levels;
         this.weight = weight;
 
