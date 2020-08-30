@@ -35,7 +35,7 @@ public class Bot
 
             if (content.startsWith(prefix + "love"))
             {
-                channel.createMessage("Jiggly bot loves all of you <3 !").block();
+                channel.createMessage("Jigglybot loves all of you <3 !").block();
             }
 
             if (content.startsWith(prefix + "dex"))
