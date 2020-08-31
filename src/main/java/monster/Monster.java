@@ -29,6 +29,15 @@ public class Monster
     public int[] moves = new int[4];
     public int[] movePP = new int[4];
 
+    public int[] stages = new int[6];
+
+    public static final int stage_attack = 0;
+    public static final int stage_defense = 1;
+    public static final int stage_speed = 2;
+    public static final int stage_special = 3;
+    public static final int stage_evasion = 4;
+    public static final int stage_accuracy = 5;
+
     public int status;
 
     public int hpEv = 0;
@@ -36,6 +45,20 @@ public class Monster
     public int defenseEv = 0;
     public int speedEv = 0;
     public int specialEv = 0;
+
+    public static final int normal_ball = 0;
+    public static final int great_ball = 1;
+    public static final int ultra_ball = 2;
+    public static final int safari_ball = 3;
+    public static final int master_ball = 4;
+
+    public static final double[] stage_effectiveness = {0.25, 0.28, 0.33, 0.40, 0.50, 0.66, 1.00, 1.50, 2.00, 2.50, 3.00, 3.50, 4.00};
+
+    public static final int asleep = 1;
+    public static final int paralyzed = 2;
+    public static final int poisoned = 3;
+    public static final int burned = 4;
+    public static final int frozen = 5;
 
     public boolean isWild = true;
 
@@ -48,21 +71,18 @@ public class Monster
         this.name = species.name;
     }
 
-    public void damage(Monster enemy, double power, boolean special, boolean crit, double modifier)
+    public static int getDamage(Monster attacker, Monster enemy, double power, boolean special, boolean crit, double modifier)
     {
         double critBonus = 1;
-        double effectiveMul = this.attack * 1.0 / enemy.defense;
+        double effectiveMul = attacker.attack * 1.0 / enemy.defense;
 
         if (crit)
             critBonus = 2;
 
         if (special)
-            effectiveMul = this.special * 1.0 / enemy.special;
+            effectiveMul = attacker.special * 1.0 / enemy.special;
 
-        enemy.hp -= (int)(((2.0 * this.level * critBonus / 5 + 2) * power * effectiveMul) / 50 * modifier);
-
-        if (enemy.hp <= 0)
-            enemy.hp = 0;
+        return (int)(((2.0 * attacker.level * critBonus / 5 + 2) * power * effectiveMul) / 50 * modifier);
     }
 
     public void recalculateStats()
@@ -126,5 +146,106 @@ public class Monster
     public static int calculateStat(int base, int iv, int ev, int level)
     {
         return (int) (((base + iv) * 2 + Math.sqrt(ev) / 4) * level / 100 + 5);
+    }
+
+    public int getCaptureResult(int ball)
+    {
+        if (!this.isWild)
+            return -1;
+
+        if (ball == master_ball)
+            return 4;
+
+        int maxN = 151;
+
+        if (ball == normal_ball)
+            maxN = 256;
+        else if (ball == great_ball)
+            maxN = 201;
+
+        int n = (int) (Math.random() * maxN);
+
+        if (this.status == asleep || this.status == frozen)
+            n -= 25;
+        else if (this.status == paralyzed || this.status == burned || this.status == poisoned)
+            n -= 12;
+
+        int b = ball == great_ball ? 8 : 12;
+        int f = Math.min(Math.max((this.maxHp * 255 * 4) / (this.hp * b), 1), 255);
+
+        if (n < 0)
+            return 4;
+        if (n <= this.catchRate)
+        {
+            int m = (int) (Math.random() * 256);
+
+            if (f >= m)
+                return 4;
+        }
+
+        int d = this.catchRate * 100 / (maxN - 1);
+
+        if (d >= 256)
+            return 3;
+
+        int s = 0;
+
+        if (this.status == asleep || this.status == frozen)
+            s += 10;
+        else if (this.status == paralyzed || this.status == burned || this.status == poisoned)
+            s += 5;
+
+        int x = d * f / 255 + s;
+
+        if (x < 10)
+            return 0;
+        else if (x < 30)
+            return 1;
+        else if (x < 70)
+            return 2;
+
+        return 3;
+    }
+
+    public String modifyStage(int stage, int amount)
+    {
+        int prev = this.stages[stage];
+        this.stages[stage] += amount;
+        this.stages[stage] = Math.min(Math.max(this.stages[stage], -6), 6);
+
+        if (prev - this.stages[stage] == 1)
+            return this.name + "'s " + getStageName(stage) + " fell!";
+        else if (prev - this.stages[stage] >= 2)
+            return this.name + "'s " + getStageName(stage) + " greatly fell!";
+        else if (prev - this.stages[stage] == -1)
+            return this.name + "'s " + getStageName(stage) + " rose!";
+        else if (prev - this.stages[stage] <= -2)
+            return this.name + "'s " + getStageName(stage) + " greatly rose!";
+        else
+            return "Nothing happened!";
+    }
+
+    public static String getStageName(int stat)
+    {
+        if (stat == stage_attack)
+            return "ATTACK";
+        else if (stat == stage_defense)
+            return "DEFENSE";
+        else if (stat == stage_speed)
+            return "SPEED";
+        else if (stat == stage_evasion)
+            return "EVASION";
+        else if (stat == stage_accuracy)
+            return "ACCURACY";
+        else
+            return "INVALID STAT";
+    }
+
+    public double getStageMultiplier(int stat)
+    {
+        if (stat != stage_evasion)
+            return stage_effectiveness[stages[stat] + 6];
+        else
+            return stage_effectiveness[6 - stages[stat]];
     }
 }
