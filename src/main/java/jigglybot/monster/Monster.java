@@ -1,6 +1,9 @@
 package jigglybot.monster;
 
-public class Monster
+import jigglybot.ICanBattle;
+import jigglybot.UserWrapper;
+
+public class Monster implements ICanBattle
 {
     public Species species;
 
@@ -68,19 +71,19 @@ public class Monster
         this.setLevel(level);
         this.recalculateStats();
         this.catchRate = species.catchRate;
-        this.name = species.name;
+        this.name = species.name.toUpperCase();
     }
 
     public static int getDamage(Monster attacker, Monster enemy, double power, boolean special, boolean crit, double modifier)
     {
         double critBonus = 1;
-        double effectiveMul = attacker.attack * 1.0 / enemy.defense;
+        double effectiveMul = (attacker.getStageMultiplier(stage_attack) * attacker.attack) / (enemy.getStageMultiplier(stage_defense) * enemy.defense);
 
         if (crit)
             critBonus = 2;
 
         if (special)
-            effectiveMul = attacker.special * 1.0 / enemy.special;
+            effectiveMul = (attacker.getStageMultiplier(stage_special) * attacker.special) / (enemy.getStageMultiplier(stage_special) * enemy.special);
 
         return (int)(((2.0 * attacker.level * critBonus / 5 + 2) * power * effectiveMul) / 50 * modifier);
     }
@@ -247,5 +250,22 @@ public class Monster
             return stage_effectiveness[stages[stat] + 6];
         else
             return stage_effectiveness[6 - stages[stat]];
+    }
+
+    public void setOwner(UserWrapper user)
+    {
+        this.owner = user.id;
+
+        if (this.isWild)
+        {
+            this.originalTrainer = user.id;
+            this.isWild = false;
+        }
+    }
+
+    @Override
+    public Monster getNextMonster()
+    {
+        return null;
     }
 }

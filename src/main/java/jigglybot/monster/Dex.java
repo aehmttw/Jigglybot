@@ -23,7 +23,7 @@ public class Dex
         Species.by_name.get("pidgeotto").description = "Very protective of its sprawling territorial area, this POKéMON will fiercely peck at any intruder.";
         Species.by_name.get("pidgeot").description = "o Very protective of its sprawling territorial area, this POKéMON will fiercely peck at any intruder.";
         Species.by_name.get("rattata").description = "Bites anything when it attacks. Small and very quick, it is a common sight in many places.";
-        Species.by_name.get("raticate").description = "It uses its whis- kers to maintain its balance. It apparently slows down if they are cut off.";
+        Species.by_name.get("raticate").description = "It uses its whiskers to maintain its balance. It apparently slows down if they are cut off.";
         Species.by_name.get("spearow").description = "Eats bugs in grassy areas. It has to flap its short wings at high speed to stay airborne.";
         Species.by_name.get("fearow").description = "With its huge and magnificent wings, it can keep aloft without ever having to land for rest.";
         Species.by_name.get("ekans").description = "Moves silently and stealthily. Eats the eggs of birds, such as PIDGEY and SPEAROW, whole.";
@@ -49,7 +49,7 @@ public class Dex
         Species.by_name.get("oddish").description = "During the day, it keeps its face buried in the ground. At night, it wanders around sowing its seeds.";
         Species.by_name.get("gloom").description = "The fluid that oozes from its mouth isn't drool. It is a nectar that is used to attract prey.";
         Species.by_name.get("vileplume").description = "The larger its petals, the more toxic pollen it contains. Its big head is heavy and hard to hold up.";
-        Species.by_name.get("paras").description = "ct A host-parasite pair in which the parasite mushroom has taken over the host bug. Prefers damp places.";
+        Species.by_name.get("paras").description = "Burrows to suck tree roots. The mushrooms on its back grow by drawing nutrients from the bug host.";
         Species.by_name.get("parasect").description = "A host-parasite pair in which the parasite mushroom has taken over the host bug. Prefers damp places.";
         Species.by_name.get("venonat").description = "Lives in the shadows of tall trees where it eats insects. It is attracted by light at night.";
         Species.by_name.get("venomoth").description = "The dust-like scales covering its wings are color coded to indicate the kinds of poison it has.";
@@ -58,7 +58,7 @@ public class Dex
         Species.by_name.get("meowth").description = "Adores circular objects. Wanders the streets on a nightly basis to look for dropped loose change.";
         Species.by_name.get("persian").description = "Although its fur has many admirers, it is tough to raise as a pet because of its fickle meanness.";
         Species.by_name.get("psyduck").description = "While lulling its enemies with its vacant look, this wily POKéMON will use psychokinetic powers.";
-        Species.by_name.get("golduck").description = "Often seen swim- ming elegantly by lake shores. It is often mistaken for the Japanese monster, Kappa.";
+        Species.by_name.get("golduck").description = "Often seen swimming elegantly by lake shores. It is often mistaken for the Japanese monster, Kappa.";
         Species.by_name.get("mankey").description = "Extremely quick to anger. It could be docile one moment then thrashing away the next instant.";
         Species.by_name.get("primeape").description = "Always furious and tenacious to boot. It will not abandon chasing its quarry until it is caught.";
         Species.by_name.get("growlithe").description = "Very protective of its territory. It will bark and bite to repel intruders from its space.";
@@ -68,7 +68,7 @@ public class Dex
         Species.by_name.get("poliwrath").description = "An adept swimmer at both the front crawl and breast stroke. Easily overtakes the best human swimmers.";
         Species.by_name.get("abra").description = "Using its ability to read minds, it will identify impending danger and TELEPORT to safety.";
         Species.by_name.get("kadabra").description = "It emits special alpha waves from its body that induce headaches just by being close by.";
-        Species.by_name.get("alakazam").description = "Its brain can out- perform a super- computer. Its intelligence quotient is said to be 5,000.";
+        Species.by_name.get("alakazam").description = "Its brain can outperform a supercomputer. Its intelligence quotient is said to be 5,000.";
         Species.by_name.get("machop").description = "Loves to build its muscles. It trains in all styles of martial arts to become even stronger.";
         Species.by_name.get("machoke").description = "Its muscular body is so powerful, it must wear a power save belt to be able to regulate its motions.";
         Species.by_name.get("machamp").description = "Using its heavy muscles, it throws powerful punches that can send the victim clear over the horizon.";
@@ -86,7 +86,7 @@ public class Dex
         Species.by_name.get("slowbro").description = "The SHELLDER that is latched onto SLOWPOKE's tail is said to feed on the host's left over scraps.";
         Species.by_name.get("magnemite").description = "Uses anti-gravity to stay suspended. Appears without warning and uses THUNDER WAVE and similar moves.";
         Species.by_name.get("magneton").description = "Formed by several MAGNEMITEs linked together. They frequently appear when sunspots flare up.";
-        Species.by_name.get("farfetch'd").description = "tected by an armor-like hide, it is capable of living in molten lava of 3,600 degrees.";
+        Species.by_name.get("farfetch'd").description = "The sprig of green onions it holds is its weapon. It is used much like a metal sword.";
         Species.by_name.get("doduo").description = "A bird that makes up for its poor flying with its fast foot speed. Leaves giant footprints.";
         Species.by_name.get("dodrio").description = "Uses its three brains to execute complex plans. While two heads sleep, one head stays awake.";
         Species.by_name.get("seel").description = "The protruding horn on its head is very hard. It is used for bashing through thick ice.";
@@ -96,7 +96,7 @@ public class Dex
         Species.by_name.get("shellder").description = "Its hard shell repels any kind of attack. It is vulnerable only when its shell is open.";
         Species.by_name.get("cloyster").description = "When attacked, it launches its horns in quick volleys. Its innards have never been seen.";
         Species.by_name.get("gastly").description = "Almost invisible, this gaseous POKéMON cloaks the target and puts it to sleep without notice.";
-        Species.by_name.get("haunter").description = "Because of its ability to slip through block walls, it is said to be from an- other dimension.";
+        Species.by_name.get("haunter").description = "Because of its ability to slip through block walls, it is said to be from another dimension.";
         Species.by_name.get("gengar").description = "Under a full moon, this POKéMON likes to mimic the shadows of people and laugh at their fright.";
         Species.by_name.get("onix").description = "As it grows, the stone portions of its body harden to become similar to a diamond, but colored black.";
         Species.by_name.get("drowzee").description = "Puts enemies to sleep then eats their dreams. Occasionally gets sick from eating bad dreams.";
@@ -117,12 +117,12 @@ public class Dex
         Species.by_name.get("rhyhorn").description = "Its massive bones are 1000 times harder than human bones. It can easily knock a trailer flying.";
         Species.by_name.get("rhydon").description = "Protected by an armor-like hide, it is capable of living in molten lava of 3,600 degrees.";
         Species.by_name.get("chansey").description = "A rare and elusive POKéMON that is said to bring happiness to those who manage to get it.";
-        Species.by_name.get("tangela").description = "The whole body is swathed with wide vines that are similar to sea- weed. Its vines shake as it walks.";
+        Species.by_name.get("tangela").description = "The whole body is swathed with wide vines that are similar to seaweed. Its vines shake as it walks.";
         Species.by_name.get("kangaskhan").description = "The infant rarely ventures out of its mother's protective pouch until it is 3 years old.";
         Species.by_name.get("horsea").description = "Known to shoot down flying bugs with precision blasts of ink from the surface of the water.";
-        Species.by_name.get("seadra").description = "Capable of swim- ming backwards by rapidly flapping its wing-like pectoral fins and stout tail.";
+        Species.by_name.get("seadra").description = "Capable of swimming backwards by rapidly flapping its wing-like pectoral fins and stout tail.";
         Species.by_name.get("goldeen").description = "Its tail fin billows like an elegant ballroom dress, giving it the nickname of the Water Queen.";
-        Species.by_name.get("seaking").description = "In the autumn spawning season, they can be seen swimming power- fully up rivers and creeks.";
+        Species.by_name.get("seaking").description = "In the autumn spawning season, they can be seen swimming powerfully up rivers and creeks.";
         Species.by_name.get("staryu").description = "An enigmatic POKéMON that can effortlessly regenerate any appendage it loses in battle.";
         Species.by_name.get("starmie").description = "Its central core glows with the seven colors of the rainbow. Some people value the core as a gem.";
         Species.by_name.get("mr.mime").description = "If interrupted while it is miming, it will slap around the offender with its broad hands";
@@ -134,18 +134,18 @@ public class Dex
         Species.by_name.get("tauros").description = "When it targets an enemy, it charges furiously while whipping its body with its long tails.";
         Species.by_name.get("magikarp").description = "In the distant past, it was somewhat stronger than the horribly weak descendants that exist today.";
         Species.by_name.get("gyarados").description = "Rarely seen in the wild. Huge and vicious, it is capable of destroying entire cities in a rage.";
-        Species.by_name.get("lapras").description = "A POKéMON that has been over- hunted almost to extinction. It can ferry people across the water.";
+        Species.by_name.get("lapras").description = "A POKéMON that has been over-hunted almost to extinction. It can ferry people across the water.";
         Species.by_name.get("ditto").description = "Capable of copying an enemy's genetic code to instantly transform itself into a duplicate of the enemy.";
         Species.by_name.get("eevee").description = "Its genetic code is irregular. It may mutate if it is exposed to radiation from element STONEs.";
         Species.by_name.get("vaporeon").description = "Lives close to water. Its long tail is ridged with a fin which is often mistaken for a mermaid's.";
-        Species.by_name.get("jolteon").description = "It accumulates negative ions in the atmosphere to blast out 10000- volt lightning bolts.";
+        Species.by_name.get("jolteon").description = "It accumulates negative ions in the atmosphere to blast out 10000-volt lightning bolts.";
         Species.by_name.get("flareon").description = "When storing thermal energy in its body, its temperature could soar to over 1600 degrees.";
         Species.by_name.get("porygon").description = "A POKéMON that consists entirely of programming code. Capable of moving freely in cyberspace.";
         Species.by_name.get("omanyte").description = "Although long extinct, in rare cases, it can be genetically resurrected from fossils.";
         Species.by_name.get("omastar").description = "A prehistoric POKéMON that died out when its heavy shell made it impossible to catch prey.";
         Species.by_name.get("kabuto").description = "A POKéMON that was resurrected from a fossil found in what was once the ocean floor eons ago.";
-        Species.by_name.get("kabutops").description = "Its sleek shape is perfect for swim- ming. It slashes prey with its claws and drains the body fluids.";
-        Species.by_name.get("aerodactyl").description = "A ferocious, pre- historic POKéMON that goes for the enemy's throat with its serrated saw-like fangs.";
+        Species.by_name.get("kabutops").description = "Its sleek shape is perfect for swimming. It slashes prey with its claws and drains the body fluids.";
+        Species.by_name.get("aerodactyl").description = "A ferocious, prehistoric POKéMON that goes for the enemy's throat with its serrated saw-like fangs.";
         Species.by_name.get("snorlax").description = "Very lazy. Just eats and sleeps. As its rotund bulk builds, it becomes steadily more slothful.";
         Species.by_name.get("articuno").description = "A legendary bird POKéMON that is said to appear to doomed people who are lost in icy mountains.";
         Species.by_name.get("zapdos").description = "A legendary bird POKéMON that is said to appear from clouds while dropping enormous lightning bolts.";
@@ -484,9 +484,9 @@ public class Dex
         Species.by_name.get("magneton").height = "3'3\"";
         Species.by_name.get("magneton").weight = "1320";
 
-        Species.by_name.get("farfetch'd").kind = "ILL";
-        Species.by_name.get("farfetch'd").height = "6'3\"";
-        Species.by_name.get("farfetch'd").weight = "2650";
+        Species.by_name.get("farfetch'd").kind = "WILD DUCK";
+        Species.by_name.get("farfetch'd").height = "2'7\"";
+        Species.by_name.get("farfetch'd").weight = "330";
 
         Species.by_name.get("doduo").kind = "TWIN BIRD";
         Species.by_name.get("doduo").height = "4'7\"";

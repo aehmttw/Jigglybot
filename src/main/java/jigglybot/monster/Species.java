@@ -96,7 +96,7 @@ public class Species
             public void accept(MessageCreateSpec messageCreateSpec)
             {
                 messageCreateSpec.addFile("/icon.png", getClass().getResourceAsStream(("/front/" + name)
-                        .replace("♂", "m").replace("♀", "f").toLowerCase() + ".png"));
+                        .replace("♂", "m").replace("♀", "f").replace("'", "").toLowerCase() + ".png"));
             }
         }).block();
 

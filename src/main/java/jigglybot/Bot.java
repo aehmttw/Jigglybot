@@ -57,6 +57,52 @@ public class Bot
                 setting.advance();
             }
 
+            if (content.startsWith("start"))
+            {
+                if (user.initialized)
+                {
+                    channel.createMessage("You have already started!").block();
+                    return;
+                }
+
+                if (!content.contains(" "))
+                {
+                    channel.createMessage("Welcome to the world of POKéMON!\n" +
+                            "Please START with your first POKéMON:\n" +
+                            "1. BULBASAUR\n" +
+                            "2. CHARMANDER\n" +
+                            "3. SQUIRTLE\n" +
+                            "4. PIKACHU").block();
+                }
+                else
+                {
+                    String arg = content.split(" ")[1].toUpperCase();
+
+                    switch (arg)
+                    {
+                        case "1":
+                        case "BULBASAUR":
+                            user.pickStarter(channel, Species.by_name.get("bulbasaur"));
+                            break;
+                        case "2":
+                        case "CHARMANDER":
+                            user.pickStarter(channel, Species.by_name.get("charmander"));
+                            break;
+                        case "3":
+                        case "SQUIRTLE":
+                            user.pickStarter(channel, Species.by_name.get("squirtle"));
+                            break;
+                        case "4":
+                        case "PIKACHU":
+                            user.pickStarter(channel, Species.by_name.get("pikachu"));
+                            break;
+                        default:
+                            channel.createMessage("Invalid POKéMON specified!").block();
+                            break;
+                    }
+                }
+            }
+
             if (content.startsWith("love"))
             {
                 channel.createMessage("Jigglybot loves all of you <3 !").block();

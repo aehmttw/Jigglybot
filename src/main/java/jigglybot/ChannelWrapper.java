@@ -41,7 +41,8 @@ public class ChannelWrapper
 
     public void queue(String message)
     {
-        this.messages.add(message);
+        if (message != null)
+            this.messages.add(message);
     }
 
     public void advance()
