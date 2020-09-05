@@ -1,7 +1,10 @@
 package jigglybot.monster;
 
+import jigglybot.ChannelWrapper;
 import jigglybot.ICanBattle;
 import jigglybot.UserWrapper;
+import jigglybot.battle.action.Move;
+import jigglybot.item.PokeBall;
 
 public class Monster implements ICanBattle
 {
@@ -29,7 +32,7 @@ public class Monster implements ICanBattle
     public int xp;
     public int level;
 
-    public int[] moves = new int[4];
+    public Move[] moves = new Move[4];
     public int[] movePP = new int[4];
 
     public int[] stages = new int[6];
@@ -49,12 +52,6 @@ public class Monster implements ICanBattle
     public int speedEv = 0;
     public int specialEv = 0;
 
-    public static final int normal_ball = 0;
-    public static final int great_ball = 1;
-    public static final int ultra_ball = 2;
-    public static final int safari_ball = 3;
-    public static final int master_ball = 4;
-
     public static final double[] stage_effectiveness = {0.25, 0.28, 0.33, 0.40, 0.50, 0.66, 1.00, 1.50, 2.00, 2.50, 3.00, 3.50, 4.00};
 
     public static final int asleep = 1;
@@ -72,6 +69,10 @@ public class Monster implements ICanBattle
         this.recalculateStats();
         this.catchRate = species.catchRate;
         this.name = species.name.toUpperCase();
+        this.hp = this.maxHp;
+
+        this.moves[0] = new Move("TEST ATTACK", Type.normal, 40, 100, 10);
+        this.moves[1] = new Move("SPECIAL ATTACK", Type.electric, 80, 70, 10);
     }
 
     public static int getDamage(Monster attacker, Monster enemy, double power, boolean special, boolean crit, double modifier)
@@ -111,6 +112,7 @@ public class Monster implements ICanBattle
         {
             lvlup = true;
             this.level++;
+            this.recalculateStats();
         }
 
         return lvlup;
@@ -123,7 +125,13 @@ public class Monster implements ICanBattle
         double b = enemy.species.xpAward;
         double l = enemy.level;
 
-        return this.addXP((int) ((a * t * b * l) / (7 * participants)));
+        this.hpEv += enemy.maxHp;
+        this.attackEv += enemy.speedEv;
+        this.defenseEv += enemy.defenseEv;
+        this.speedEv += enemy.speedEv;
+        this.specialEv += enemy.specialEv;
+
+        return this.addXP((int) ((a * t * b * l) / (7 * Math.max(participants, 1))));
     }
 
     public void setLevel(int level)
@@ -156,14 +164,14 @@ public class Monster implements ICanBattle
         if (!this.isWild)
             return -1;
 
-        if (ball == master_ball)
+        if (ball == PokeBall.master_ball_num)
             return 4;
 
         int maxN = 151;
 
-        if (ball == normal_ball)
+        if (ball == PokeBall.normal_ball_num)
             maxN = 256;
-        else if (ball == great_ball)
+        else if (ball == PokeBall.great_ball_num)
             maxN = 201;
 
         int n = (int) (Math.random() * maxN);
@@ -173,7 +181,7 @@ public class Monster implements ICanBattle
         else if (this.status == paralyzed || this.status == burned || this.status == poisoned)
             n -= 12;
 
-        int b = ball == great_ball ? 8 : 12;
+        int b = ball == PokeBall.great_ball_num ? 8 : 12;
         int f = Math.min(Math.max((this.maxHp * 255 * 4) / (this.hp * b), 1), 255);
 
         if (n < 0)
@@ -266,6 +274,15 @@ public class Monster implements ICanBattle
     @Override
     public Monster getNextMonster()
     {
-        return null;
+        if (this.hp > 0)
+            return this;
+        else
+            return null;
+    }
+
+    @Override
+    public void queryMove(ChannelWrapper cw, Monster m)
+    {
+        cw.currentBattle.actionDecided(this.moves[0]);
     }
 }

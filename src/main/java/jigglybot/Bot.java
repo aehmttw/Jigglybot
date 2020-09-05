@@ -8,6 +8,7 @@ import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.Reaction;
+import jigglybot.battle.Battle;
 import jigglybot.location.Location;
 import jigglybot.monster.Dex;
 import jigglybot.monster.Monster;
@@ -115,7 +116,54 @@ public class Bot
                 else
                 {
                     Monster monster = setting.location.spawn();
-                    channel.createMessage("Wild L" + monster.level + " " + monster.name.toUpperCase() + " appeared!").block();
+                    channel.createMessage("Wild L" + monster.level + " " + monster.name.toUpperCase() + " appeared!\nYou can JOIN the fight!").block();
+                    setting.currentBattle = new Battle(setting, monster);
+                }
+            }
+
+            if (content.startsWith("join") && setting.currentBattle != null)
+                setting.currentBattle.join(user);
+
+            if (content.startsWith("fight") && setting.currentBattle != null)
+            {
+                if (!content.contains(" "))
+                    channel.createMessage("Please specify ATTACK!").block();
+                else
+                    setting.currentBattle.inputFight(user, content.substring(content.indexOf(" ") + 1));
+            }
+
+            if (content.startsWith("catch") && setting.currentBattle != null)
+            {
+                setting.currentBattle.inputCapture(user);
+            }
+
+            if (content.startsWith("heal"))
+            {
+                if (user.inBattle)
+                    channel.createMessage("Can't do this now!").block();
+                else if (!setting.location.hasHeal)
+                    channel.createMessage("There is no POKéMON CENTER in " + setting.location.name + "!").block();
+                else
+                {
+                    if (setting.messages.isEmpty())
+                    {
+                        setting.queue("Welcome to our POKéMON CENTER!");
+                        setting.queue("We heal your POKéMON back to perfect health!");
+                        setting.queue("OK. We'll need your POKéMON.");
+                        setting.queue("Thank you! Your POKéMON are fighting fit!");
+                        setting.queue("We hope to see you again!");
+                        setting.advance();
+                    }
+                    else
+                        channel.createMessage("We healed your POKéMON to perfect health!\nWe hope to see you again!").block();
+
+                    for (int i = 0; i < user.squad.length; i++)
+                    {
+                        if (user.squad[i] != null)
+                        {
+                            user.squad[i].hp = user.squad[i].maxHp;
+                        }
+                    }
                 }
             }
 
@@ -203,21 +251,28 @@ public class Bot
 
             if (content.startsWith("move"))
             {
-                try
+                if (setting.currentBattle != null)
                 {
-                    int loc = Integer.parseInt(content.split(" ")[1]) - 1;
-                    Location l = setting.location.neighbors[loc];
-                    setting.location = l;
-
-                    channel.createMessage("Moved to " + l.name + "!").block();
-
-                    printLocation(channel, m, false);
+                    channel.createMessage("Finish the battle first!").block();
                 }
-                catch (Exception e)
+                else
                 {
-                    channel.createMessage("Please add LOCATION NUMBER after MOVE command!\n\n").block();
+                    try
+                    {
+                        int loc = Integer.parseInt(content.split(" ")[1]) - 1;
+                        Location l = setting.location.neighbors[loc];
+                        setting.location = l;
 
-                    printLocation(channel, m, true);
+                        channel.createMessage("Moved to " + l.name + "!").block();
+
+                        printLocation(channel, m, false);
+                    }
+                    catch (Exception e)
+                    {
+                        channel.createMessage("Please add LOCATION NUMBER after MOVE command!\n\n").block();
+
+                        printLocation(channel, m, true);
+                    }
                 }
             }
         });
@@ -253,7 +308,15 @@ public class Bot
         if (showCurrent)
             s.append("Currently in ").append(l.name).append("\n\n");
 
-        s.append("Can MOVE to: \n");
+        s.append("Things to do here:\n");
+
+        if (l.hasHeal)
+            s.append("HEAL your POKéMON at the POKéMON CENTER!\n");
+
+        if (!l.spawnEntries.isEmpty())
+            s.append("Encounter wild POKéMON!\n");
+
+        s.append("\nMOVE to: \n");
 
         for (int i = 0; i < l.neighbors.length; i++)
             s.append(i + 1).append(". ").append(l.neighbors[i].name).append("\n");

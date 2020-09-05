@@ -3,6 +3,7 @@ package jigglybot;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
+import jigglybot.battle.Battle;
 import jigglybot.location.Location;
 
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ public class ChannelWrapper
     public long id;
     public ArrayList<String> messages = new ArrayList<>();
     public MessageChannel messageChannel;
+    public Battle currentBattle = null;
 
     public long activeMessage = -1;
 
@@ -47,6 +49,9 @@ public class ChannelWrapper
 
     public void advance()
     {
+        if (this.messages.isEmpty())
+            return;
+
         Message m = messageChannel.createMessage(this.messages.remove(0)).block();
 
         if (this.messages.size() > 0)

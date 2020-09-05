@@ -2,6 +2,7 @@ package jigglybot.monster;
 
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.MessageCreateSpec;
+import jigglybot.battle.action.Move;
 
 import java.util.ArrayList;
 import java.util.HashMap;

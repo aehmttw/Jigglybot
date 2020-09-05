@@ -1,9 +1,13 @@
-package jigglybot.monster;
+package jigglybot.battle.action;
 
 import jigglybot.ChannelWrapper;
 import jigglybot.TriConsumer;
+import jigglybot.monster.Monster;
+import jigglybot.monster.Type;
 
-public class Move
+import java.util.ArrayList;
+
+public class Move implements IAction
 {
     public final String name;
     public final int type;
@@ -12,10 +16,12 @@ public class Move
     public final int maxPP;
 
     public boolean useDamage = true;
-    public boolean isSpecial = false;
+    public boolean isSpecial;
 
     public double critMultiplier = 1;
     public int priority = 0;
+
+    public static final Move none = new Move("none", -1, 0, 0, 0);
 
     public TriConsumer<Monster, Monster, ChannelWrapper> damageBehavior;
 
@@ -51,28 +57,49 @@ public class Move
             cw.queue(Type.getEffectiveMessage(this.type, defender.species.type1, defender.species.type2, defender.name));
 
             defender.hp -= Monster.getDamage(attacker, defender, this.power, this.isSpecial, crit, mod);
+
+            if (defender.hp < 0)
+                defender.hp = 0;
+
+            cw.queue(defender.name + "'s HP: " + defender.hp + "/" + defender.maxHp);
         };
     }
 
-    public boolean execute(Monster attacker, Monster defender, ChannelWrapper cw, int participants)
+    public boolean execute(Monster attacker, Monster defender, ChannelWrapper cw, ArrayList<Monster> participants)
     {
+        if (this == Move.none)
+            return false;
+
         cw.queue(attacker.name + " used " + this.name + "!");
 
         if (this.accuracy >= 0)
         {
             int a = (int) (accuracy * attacker.getStageMultiplier(Monster.stage_accuracy) * defender.getStageMultiplier(Monster.stage_evasion));
-            int r = (int) (Math.random() * 256);
+            int r = (int) (Math.random() * 100);
 
             if (r < a)
             {
                 this.damageBehavior.accept(attacker, defender, cw);
 
-                if (defender.hp < 0)
+                if (defender.hp <= 0)
                 {
                     defender.hp = 0;
-                    attacker.defeatedEnemy(defender, participants);
-                    return true;
+
+                    cw.queue(defender.name + " fainted!");
+
+                    for (Monster m: participants)
+                    {
+                        int xp = m.xp;
+                        boolean lvlup = m.defeatedEnemy(defender, participants.size());
+
+                        cw.queue(m.name + " gained " + (m.xp - xp) + " EXP. Points!");
+
+                        if (lvlup)
+                            cw.queue(m.name + " grew to level " + m.level + "!");
+                    }
                 }
+
+                return true;
             }
         }
 
