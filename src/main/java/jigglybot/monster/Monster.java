@@ -37,6 +37,8 @@ public class Monster implements ICanBattle
 
     public int[] stages = new int[6];
 
+    public boolean isWild = true;
+
     public static final int stage_attack = 0;
     public static final int stage_defense = 1;
     public static final int stage_speed = 2;
@@ -52,6 +54,8 @@ public class Monster implements ICanBattle
     public int speedEv = 0;
     public int specialEv = 0;
 
+    public boolean flinched = false;
+
     public static final double[] stage_effectiveness = {0.25, 0.28, 0.33, 0.40, 0.50, 0.66, 1.00, 1.50, 2.00, 2.50, 3.00, 3.50, 4.00};
 
     public static final int asleep = 1;
@@ -60,7 +64,6 @@ public class Monster implements ICanBattle
     public static final int burned = 4;
     public static final int frozen = 5;
 
-    public boolean isWild = true;
 
     public Monster(Species species, int level)
     {
@@ -71,8 +74,10 @@ public class Monster implements ICanBattle
         this.name = species.name.toUpperCase();
         this.hp = this.maxHp;
 
-        this.moves[0] = new Move("TEST ATTACK", Type.normal, 40, 100, 10);
-        this.moves[1] = new Move("SPECIAL ATTACK", Type.electric, 80, 70, 10);
+        this.moves[0] = new Move("TEST ATTACK", Type.normal, 20, 40, 100);
+        this.moves[1] = new Move("SPECIAL ATTACK", Type.electric, 10, 80, 70);
+        this.movePP[0] = 1;
+        this.movePP[1] = 1;
     }
 
     public static int getDamage(Monster attacker, Monster enemy, double power, boolean special, boolean crit, double modifier)
@@ -86,7 +91,7 @@ public class Monster implements ICanBattle
         if (special)
             effectiveMul = (attacker.getStageMultiplier(stage_special) * attacker.special) / (enemy.getStageMultiplier(stage_special) * enemy.special);
 
-        return (int)(((2.0 * attacker.level * critBonus / 5 + 2) * power * effectiveMul) / 50 * modifier);
+        return Math.max(1, (int)(((2.0 * attacker.level * critBonus / 5 + 2) * power * effectiveMul) / 50 * modifier));
     }
 
     public void recalculateStats()
@@ -250,6 +255,22 @@ public class Monster implements ICanBattle
             return "ACCURACY";
         else
             return "INVALID STAT";
+    }
+
+    public static String getEffectMessage(int stat)
+    {
+        if (stat == asleep)
+            return " fell asleep!";
+        else if (stat == paralyzed)
+            return "'s paralyzed! It may not attack!";
+        else if (stat == poisoned)
+            return " was poisoned!";
+        else if (stat == burned)
+            return " was burned!";
+        else if (stat == stage_accuracy)
+            return " was frozen solid!";
+        else
+            return " invalid effect!";
     }
 
     public double getStageMultiplier(int stat)

@@ -1,6 +1,7 @@
 package jigglybot.battle.action;
 
 import jigglybot.ChannelWrapper;
+import jigglybot.QuadConsumer;
 import jigglybot.TriConsumer;
 import jigglybot.monster.Monster;
 import jigglybot.monster.Type;
@@ -21,12 +22,26 @@ public class Move implements IAction
     public double critMultiplier = 1;
     public int priority = 0;
 
+    public double recoil = 0;
+
+    public boolean effectTargetsEnemy = true;
+    public double effectChance = 1;
+
+    public int statusEffect = -1;
+    public int stage = -1;
+    public int stageAmount = -1;
+
     public static final Move none = new Move("none", -1, 0, 0, 0);
+    public static final Move struggle = new Move("STRUGGLE", Type.normal, 10, 50, 100);
 
     public TriConsumer<Monster, Monster, ChannelWrapper> damageBehavior;
+    public QuadConsumer<Monster, Monster, Integer, ChannelWrapper> postDamageBehavior;
+    public TriConsumer<Monster, Monster, ChannelWrapper> effectBehavior;
 
-    public Move(String name, int type, int power, int accuracy, int maxPP)
+    public Move(String name, int type, int maxPP, int power, int accuracy)
     {
+        MoveList.by_name.put(name, this);
+
         this.name = name.toUpperCase();
         this.type = type;
         this.power = power;
@@ -38,6 +53,9 @@ public class Move implements IAction
 
         this.damageBehavior = (attacker, defender, cw) ->
         {
+            if (this.power == 0)
+                return;
+
             double mod = (int)(Math.random() * 39 + 217) / 255.0;
 
             if (this.type == attacker.species.type1 || this.type == attacker.species.type2)
@@ -63,53 +81,80 @@ public class Move implements IAction
 
             cw.queue(defender.name + "'s HP: " + defender.hp + "/" + defender.maxHp);
         };
-    }
 
-    public boolean execute(Monster attacker, Monster defender, ChannelWrapper cw, ArrayList<Monster> participants)
-    {
-        if (this == Move.none)
-            return false;
-
-        cw.queue(attacker.name + " used " + this.name + "!");
-
-        if (this.accuracy >= 0)
+        this.postDamageBehavior = (monster, enemy, damage, cw) ->
         {
-            int a = (int) (accuracy * attacker.getStageMultiplier(Monster.stage_accuracy) * defender.getStageMultiplier(Monster.stage_evasion));
-            int r = (int) (Math.random() * 100);
+            if (recoil > 0)
+                cw.queue(monster.name + "'s hit with recoil!");
+            else if (recoil < 0)
+                cw.queue("Sucked health from ");
 
-            if (r < a)
+            monster.hp -= damage * this.recoil;
+
+            monster.hp = Math.min(monster.maxHp, Math.max(0, monster.hp));
+
+            if (recoil != 0)
+                cw.queue(monster.name + "'s HP: " + monster.hp + "/" + monster.maxHp);
+        };
+
+        this.effectBehavior = (monster, enemy, cw) ->
+        {
+            if (this.effectChance > Math.random())
             {
-                this.damageBehavior.accept(attacker, defender, cw);
+                Monster m = enemy;
 
-                if (defender.hp <= 0)
+                if (!this.effectTargetsEnemy)
+                    m = monster;
+
+                if (this.statusEffect >= 0 && m.status == 0)
                 {
-                    defender.hp = 0;
-
-                    cw.queue(defender.name + " fainted!");
-
-                    for (Monster m: participants)
+                    if (!(this.statusEffect == Monster.burned && (enemy.species.type1 == Type.fire || enemy.species.type2 == Type.fire)) &&
+                            !(this.statusEffect == Monster.frozen && (enemy.species.type1 == Type.ice || enemy.species.type2 == Type.ice)) &&
+                            !(this.statusEffect == Monster.poisoned && (enemy.species.type1 == Type.poison || enemy.species.type2 == Type.poison)))
                     {
-                        int xp = m.xp;
-                        boolean lvlup = m.defeatedEnemy(defender, participants.size());
-
-                        cw.queue(m.name + " gained " + (m.xp - xp) + " EXP. Points!");
-
-                        if (lvlup)
-                            cw.queue(m.name + " grew to level " + m.level + "!");
+                        m.status = this.statusEffect;
+                        cw.queue(m.name + Monster.getEffectMessage(this.statusEffect));
                     }
                 }
 
-                return true;
+                if (this.stage >= 0)
+                    cw.queue(m.modifyStage(this.stage, this.stageAmount));
             }
+
+            if (enemy.status == Monster.frozen && this.type == Type.fire)
+            {
+                enemy.status = 0;
+                cw.queue("Fire defrosted " + enemy.name + "!");
+            }
+        };
+    }
+
+    public void execute(Monster attacker, Monster defender, ChannelWrapper cw, ArrayList<Monster> participants)
+    {
+        if (this == Move.none)
+            return;
+
+        cw.queue(attacker.name + " used " + this.name + "!");
+
+        int a = (int) (accuracy * attacker.getStageMultiplier(Monster.stage_accuracy) * defender.getStageMultiplier(Monster.stage_evasion));
+        int r = (int) (Math.random() * 100);
+
+        if (r < a || this.accuracy < 0)
+        {
+            int hp = defender.hp;
+
+            this.damageBehavior.accept(attacker, defender, cw);
+            this.postDamageBehavior.accept(attacker, defender, defender.hp - hp, cw);
+            this.effectBehavior.accept(attacker, defender, cw);
+
+            return;
         }
 
         if (useDamage)
-            cw.queue("But, it missed!");
+            cw.queue(attacker.name + "'s attack missed!");
         else if (isSpecial)
             cw.queue("It didn't affect " + defender.name + "!");
         else
             cw.queue("But, it failed!");
-
-        return false;
     }
 }

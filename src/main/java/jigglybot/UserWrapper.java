@@ -68,29 +68,29 @@ public class UserWrapper implements ICanBattle
     @Override
     public void queryMove(ChannelWrapper cw, Monster m)
     {
-        StringBuilder s = new StringBuilder("```What will " + this.name + " do?\n\n" +
-                "FIGHT\n");
+        StringBuilder s = new StringBuilder("What will " + this.name + " do?\n" +
+                "```\nFIGHT\n");
 
         for (int i = 0; i < m.moves.length; i++)
         {
             if (m.moves[i] != null)
-                s.append(i + 1).append(". ").append(m.moves[i].name).append(" (PP ").append(m.movePP[i]).append("/").append(m.moves[i].maxPP).append(")    ");
+                s.append(i + 1).append(". ").append(m.moves[i].name).append(" (PP ").append(m.movePP[i]).append("/").append(m.moves[i].maxPP).append(")\n");
         }
 
-        s.append("\n\nITEM\nNot yet available!\n\nSWITCH POKéMON\n");
+        s.append("``````\nITEM\nNot yet available!``````\nSWITCH POKéMON\n");
 
         for (int i = 0; i < this.squad.length; i++)
         {
             if (this.squad[i] != null)
             {
                 if (this.squad[i].hp <= 0)
-                    s.append(i + 1).append(". ").append(this.squad[i].name).append(" FNT    ");
+                    s.append(i + 1).append(". ").append(this.squad[i].name).append(" FNT\n");
                 else
-                    s.append(i + 1).append(". ").append(this.squad[i].name).append(" L").append(this.squad[i].level).append(" (HP ").append(this.squad[i].hp).append("/").append(this.squad[i].maxHp).append(")    ");
+                    s.append(i + 1).append(". ").append(this.squad[i].name).append(" L").append(this.squad[i].level).append(" (HP ").append(this.squad[i].hp).append("/").append(this.squad[i].maxHp).append(")\n");
             }
         }
 
-        s.append("\n\nRUN\nAttempts to escape the battle!```");
+        s.append("``````\nRUN\nAttempts to escape the battle!```");
 
         cw.queue(s.toString());
         cw.advance();

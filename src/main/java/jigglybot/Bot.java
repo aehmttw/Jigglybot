@@ -8,11 +8,16 @@ import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.Reaction;
+import discord4j.core.spec.MessageCreateSpec;
 import jigglybot.battle.Battle;
+import jigglybot.battle.action.Move;
+import jigglybot.battle.action.MoveList;
 import jigglybot.location.Location;
 import jigglybot.monster.Dex;
 import jigglybot.monster.Monster;
 import jigglybot.monster.Species;
+
+import java.util.function.Consumer;
 
 public class Bot
 {
@@ -23,6 +28,7 @@ public class Bot
         Species.setup();
         Location.setup();
         Dex.setup();
+        MoveList.setup();
 
         final String token = args[0];
         final DiscordClient client = DiscordClient.create(token);
@@ -56,6 +62,24 @@ public class Bot
             if (content.startsWith("next"))
             {
                 setting.advance();
+            }
+
+            if (content.startsWith("help"))
+            {
+                String s = "It's a message from PROF. OAK!```Hi! I see you have discovered my newest creation, the JIGGLYBOT! " +
+                        "JIGGLYBOT will guide you through the wonderful KANTO world of POKéMON! If you're lost, just type " + prefix + "loc and " +
+                        "JIGGLYBOT will tell you where you are. JIGGLYBOT will usually capitalize things you can do, such as HEAL or MOVE." +
+                        "You can do these things by typing them with a '" + prefix + "' before them, like " + prefix + "heal or " + prefix + "move. When " +
+                        "there's more JIGGLYBOT wants to tell you, it will add a down arrow reaction. Just type " + prefix + "next or click the arrow " +
+                        "to see what else JIGGLYBOT wants to tell you. Please help me document every species of POKéMON with your POKéDEX! " +
+                        "You can access the POKéDEX with " + prefix + "dex.";
+
+                if (!user.initialized)
+                {
+                    s += "\n\nOh! It's dangerous to go out alone! I should better give you a POKéMON to start off with! Type -start to get started!";
+                }
+
+                channel.createMessage(s + "```").block();
             }
 
             if (content.startsWith("start"))
@@ -116,6 +140,16 @@ public class Bot
                 else
                 {
                     Monster monster = setting.location.spawn();
+                    channel.createMessage(new Consumer<MessageCreateSpec>()
+                    {
+                        @Override
+                        public void accept(MessageCreateSpec messageCreateSpec)
+                        {
+                            messageCreateSpec.addFile("/icon.png", getClass().getResourceAsStream(("/front/" + monster.name)
+                                    .replace("♂", "m").replace("♀", "f").replace("'", "").toLowerCase() + ".png"));
+                        }
+                    }).block();
+
                     channel.createMessage("Wild L" + monster.level + " " + monster.name.toUpperCase() + " appeared!\nYou can JOIN the fight!").block();
                     setting.currentBattle = new Battle(setting, monster);
                 }
@@ -127,15 +161,24 @@ public class Bot
             if (content.startsWith("fight") && setting.currentBattle != null)
             {
                 if (!content.contains(" "))
-                    channel.createMessage("Please specify ATTACK!").block();
+                    setting.currentBattle.inputFight(user, null);
                 else
                     setting.currentBattle.inputFight(user, content.substring(content.indexOf(" ") + 1));
             }
 
-            if (content.startsWith("catch") && setting.currentBattle != null)
+            if (content.startsWith("switch") && setting.currentBattle != null)
             {
-                setting.currentBattle.inputCapture(user);
+                if (!content.contains(" "))
+                    setting.currentBattle.inputSwitch(user, null);
+                else
+                    setting.currentBattle.inputSwitch(user, content.substring(content.indexOf(" ") + 1));
             }
+
+            if (content.startsWith("catch") && setting.currentBattle != null)
+                setting.currentBattle.inputCapture(user);
+
+            if (content.startsWith("run") && setting.currentBattle != null)
+                setting.currentBattle.inputRun(user);
 
             if (content.startsWith("heal"))
             {
@@ -150,6 +193,7 @@ public class Bot
                         setting.queue("Welcome to our POKéMON CENTER!");
                         setting.queue("We heal your POKéMON back to perfect health!");
                         setting.queue("OK. We'll need your POKéMON.");
+                        setting.queue("...");
                         setting.queue("Thank you! Your POKéMON are fighting fit!");
                         setting.queue("We hope to see you again!");
                         setting.advance();
@@ -162,6 +206,14 @@ public class Bot
                         if (user.squad[i] != null)
                         {
                             user.squad[i].hp = user.squad[i].maxHp;
+
+                            for (int j = 0; j < user.squad[i].moves.length; j++)
+                            {
+                                if (user.squad[i].moves[j] != null)
+                                {
+                                    user.squad[i].movePP[j] = user.squad[i].moves[j].maxPP;
+                                }
+                            }
                         }
                     }
                 }
