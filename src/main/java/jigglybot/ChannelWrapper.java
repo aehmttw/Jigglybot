@@ -17,6 +17,8 @@ public class ChannelWrapper
     public long id;
     public ArrayList<String> messages = new ArrayList<>();
     public MessageChannel messageChannel;
+
+    public Dialog currentDialog = null;
     public Battle currentBattle = null;
 
     public long activeMessage = -1;

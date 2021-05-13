@@ -1,6 +1,7 @@
 package jigglybot.battle;
 
 import jigglybot.ChannelWrapper;
+import jigglybot.DialogLearnMove;
 import jigglybot.ICanBattle;
 import jigglybot.UserWrapper;
 import jigglybot.battle.action.*;
@@ -62,7 +63,7 @@ public class Battle
     {
         if (!player.initialized)
             channel.messageChannel.createMessage("You need to START first!").block();
-        else if (this.p1Mon != null)
+        else if (this.p1Mon != null) // fix
             channel.messageChannel.createMessage("You can JOIN when a POKéMON faints!").block();
         else if (player.inBattle)
             channel.messageChannel.createMessage("You're already in a battle!");
@@ -124,12 +125,40 @@ public class Battle
         }
     }
 
+    public void inputLearn(UserWrapper user, String in)
+    {
+        if (in == null)
+        {
+            this.channel.messageChannel.createMessage("Please specify move!").block();
+            return;
+        }
+
+        if ((user != this.player1 && !this.p2sTurn) || (user != this.player2 && this.p2sTurn))
+        {
+            this.channel.messageChannel.createMessage("Can't do this now!").block();
+            return;
+        }
+
+        Monster m = this.p1Mon;
+
+        if (user == this.player2)
+            m = this.p2Mon;
+
+        Move mo = MoveList.by_name.get(in.toLowerCase());
+
+        if (mo == null)
+            this.channel.messageChannel.createMessage("Invalid move!").block();
+        else
+        {
+            this.channel.currentDialog = new DialogLearnMove(this.channel, user, m, mo);
+            this.channel.currentDialog.execute();
+        }
+    }
+
     public void inputFight(UserWrapper user, String in)
     {
         if (user != this.player1 && user != this.player2)
             this.channel.messageChannel.createMessage("You must JOIN the battle!").block();
-        else if (!this.channel.messages.isEmpty())
-            this.channel.messageChannel.createMessage("Can't do this now!").block();
         else if (in == null)
             this.channel.messageChannel.createMessage("Please specify ATTACK!").block();
         else
@@ -181,8 +210,6 @@ public class Battle
     {
         if (user != this.player1 && user != this.player2)
             this.channel.messageChannel.createMessage("You must JOIN the battle!").block();
-        else if (!this.channel.messages.isEmpty())
-            this.channel.messageChannel.createMessage("Can't do this now!").block();
         else if (!this.joinable) //TODO add trainer
             this.channel.messageChannel.createMessage("No! There's no running from a trainer battle!").block();
         else
@@ -193,8 +220,6 @@ public class Battle
     {
         if (user != this.player1)
             this.channel.messageChannel.createMessage("You must JOIN the battle!").block();
-        else if (!this.channel.messages.isEmpty())
-            this.channel.messageChannel.createMessage("Can't do this now!").block();
         else
             this.actionDecided(new UseItem(new Item(PokeBall.pokeBall)));
     }
@@ -203,8 +228,6 @@ public class Battle
     {
         if (user != this.player1 && user != this.player2)
             this.channel.messageChannel.createMessage("You must JOIN the battle!").block();
-        else if (!this.channel.messages.isEmpty())
-            this.channel.messageChannel.createMessage("Can't do this now!").block();
         else if ((user == this.player1 && this.p2sTurn) || (user == this.player2 && !this.p2sTurn))
             this.channel.messageChannel.createMessage("Can't do this now!").block();
         else if (in == null)
@@ -268,9 +291,13 @@ public class Battle
             {
                 this.channel.currentBattle = null;
                 this.player1.inBattle = false;
+                this.player1.endBattle();
 
                 if (this.player2 instanceof UserWrapper)
+                {
                     ((UserWrapper) this.player2).inBattle = false;
+                    ((UserWrapper) this.player2).endBattle();
+                }
 
                 return;
             }
@@ -299,9 +326,13 @@ public class Battle
             {
                 this.channel.currentBattle = null;
                 this.player1.inBattle = false;
+                this.player1.endBattle();
 
                 if (this.player2 instanceof UserWrapper)
+                {
                     ((UserWrapper) this.player2).inBattle = false;
+                    ((UserWrapper) this.player2).endBattle();
+                }
 
                 return;
             }
@@ -341,9 +372,12 @@ public class Battle
             p1first = false;
         else
         {
-            if (p1Mon.speed * p1Mon.getStageMultiplier(Monster.stage_speed) > p2Mon.speed * p2Mon.getStageMultiplier(Monster.stage_speed))
+            double p1speed = p1Mon.speed * p1Mon.getStageMultiplier(Monster.stage_speed) * p1Mon.getEffectSpeedMultiplier();
+            double p2speed = p2Mon.speed * p2Mon.getStageMultiplier(Monster.stage_speed) * p2Mon.getEffectSpeedMultiplier();
+
+            if (p1speed > p2speed)
                 p1first = true;
-            else if (p1Mon.speed * p1Mon.getStageMultiplier(Monster.stage_speed) < p2Mon.speed * p2Mon.getStageMultiplier(Monster.stage_speed))
+            else if (p2speed > p1speed)
                 p1first = false;
         }
 
@@ -352,24 +386,45 @@ public class Battle
 
         if (p1first)
         {
-            p1.execute(this.p1Mon, this.p2Mon, cw, this.p1Participants);
+            if (testConditions(this.p1Mon))
+                p1.execute(this.p1Mon, this.p2Mon, cw, this.p1Participants);
 
             if (!this.testFaint())
             {
-                p2.execute(this.p2Mon, this.p1Mon, cw, this.p2Participants);
-                this.testFaint();
+                if (testConditions(this.p2Mon))
+                    p2.execute(this.p2Mon, this.p1Mon, cw, this.p2Participants);
+
+                if (!this.testFaint())
+                {
+                    this.applyConditionDamage(this.p1Mon);
+                    this.applyConditionDamage(this.p2Mon);
+
+                    this.testFaint();
+                }
             }
         }
         else
         {
-            p2.execute(this.p2Mon, this.p1Mon, cw, this.p2Participants);
+            if (testConditions(this.p2Mon))
+                p2.execute(this.p2Mon, this.p1Mon, cw, this.p2Participants);
 
             if (!this.testFaint())
             {
-                p1.execute(this.p1Mon, this.p2Mon, cw, this.p1Participants);
-                this.testFaint();
+                if (testConditions(this.p1Mon))
+                    p1.execute(this.p1Mon, this.p2Mon, cw, this.p1Participants);
+
+                if (!this.testFaint())
+                {
+                    this.applyConditionDamage(this.p1Mon);
+                    this.applyConditionDamage(this.p2Mon);
+
+                    this.testFaint();
+                }
             }
         }
+
+        this.p1Mon.flinched = false;
+        this.p2Mon.flinched = false;
 
         p2Damage += p1Mon.hp - p1health;
         p1Damage += p2Mon.hp - p2health;
@@ -388,6 +443,7 @@ public class Battle
             if (!this.joinable)
             {
                 ((UserWrapper)this.player2).inBattle = false;
+                ((UserWrapper) this.player2).endBattle();
 
                 if (this.player1.getNextMonster() != null)
                 {
@@ -412,6 +468,7 @@ public class Battle
             if (!this.joinable)
             {
                 ((UserWrapper)this.player2).inBattle = false;
+                ((UserWrapper) this.player2).endBattle();
 
                 if (this.player2.getNextMonster() != null)
                 {
@@ -430,6 +487,7 @@ public class Battle
         else
         {
             this.player1.inBattle = false;
+            this.player1.endBattle();
             this.p1Mon = null;
             this.p1Damage = 0;
             this.player1 = null;
@@ -469,18 +527,75 @@ public class Battle
 
             for (Monster m: participants)
             {
-                int xp = m.xp;
-                boolean lvlup = m.defeatedEnemy(defender, participants.size());
+                if (!m.isWild)
+                {
+                    int xp = m.xp;
+                    boolean lvlup = m.defeatedEnemy(defender, participants.size());
 
-                this.channel.queue(m.name + " gained " + (m.xp - xp) + " EXP. Points!");
+                    this.channel.queue(m.name + " gained " + (m.xp - xp) + " EXP. Points!");
 
-                if (lvlup)
-                    this.channel.queue(m.name + " grew to level " + m.level + "!");
+                    if (lvlup)
+                        this.channel.queue(m.name + " grew to level " + m.level + "!");
+                }
             }
 
             return true;
         }
 
         return false;
+    }
+
+    public boolean testConditions(Monster m)
+    {
+        if (m.status == Monster.asleep)
+        {
+            m.sleepTurns--;
+
+            if (m.sleepTurns == 0)
+            {
+                m.status = 0;
+                channel.queue(m.name + " woke up!");
+            }
+            else
+                channel.queue(m.name + " is fast asleep!");
+
+            return false;
+        }
+        else if (m.status == Monster.paralyzed)
+        {
+            if (Math.random() < 0.25)
+            {
+                channel.queue(m.name + "'s fully paralyzed!");
+                return false;
+            }
+        }
+        else if (m.status == Monster.frozen)
+        {
+            channel.queue(m.name + " is frozen solid!");
+            return false;
+        }
+        else if (m.flinched)
+        {
+            channel.queue(m.name + " flinched!");
+            return false;
+        }
+
+        return true;
+    }
+
+    public void applyConditionDamage(Monster m)
+    {
+        if (m.status == Monster.poisoned || m.status == Monster.burned)
+        {
+            if (m.status == Monster.burned)
+                channel.queue(m.name + "'s hurt by the burn!");
+            else
+                channel.queue(m.name + "'s hurt by poison!");
+
+            m.hp = Math.max(m.hp - Math.max(m.maxHp / 16, 1), 0);
+
+            channel.queue(m.name + "'s HP: " + m.hp + "/" + m.maxHp);
+        }
+
     }
 }

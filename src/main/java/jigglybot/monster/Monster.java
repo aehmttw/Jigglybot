@@ -4,6 +4,7 @@ import jigglybot.ChannelWrapper;
 import jigglybot.ICanBattle;
 import jigglybot.UserWrapper;
 import jigglybot.battle.action.Move;
+import jigglybot.battle.action.MoveList;
 import jigglybot.item.PokeBall;
 
 public class Monster implements ICanBattle
@@ -55,6 +56,8 @@ public class Monster implements ICanBattle
     public int specialEv = 0;
 
     public boolean flinched = false;
+    public int confuseTurns = 0;
+    public int sleepTurns = 0;
 
     public static final double[] stage_effectiveness = {0.25, 0.28, 0.33, 0.40, 0.50, 0.66, 1.00, 1.50, 2.00, 2.50, 3.00, 3.50, 4.00};
 
@@ -63,7 +66,6 @@ public class Monster implements ICanBattle
     public static final int poisoned = 3;
     public static final int burned = 4;
     public static final int frozen = 5;
-
 
     public Monster(Species species, int level)
     {
@@ -74,10 +76,14 @@ public class Monster implements ICanBattle
         this.name = species.name.toUpperCase();
         this.hp = this.maxHp;
 
-        this.moves[0] = new Move("TEST ATTACK", Type.normal, 20, 40, 100);
-        this.moves[1] = new Move("SPECIAL ATTACK", Type.electric, 10, 80, 70);
-        this.movePP[0] = 1;
-        this.movePP[1] = 1;
+        this.moves[0] = MoveList.allMoves.get((int) (MoveList.allMoves.size() * Math.random()));
+        this.moves[1] = MoveList.allMoves.get((int) (MoveList.allMoves.size() * Math.random()));
+        this.moves[2] = MoveList.allMoves.get((int) (MoveList.allMoves.size() * Math.random()));
+    }
+
+    public Monster(String s)
+    {
+        this.fromString(s);
     }
 
     public static int getDamage(Monster attacker, Monster enemy, double power, boolean special, boolean crit, double modifier)
@@ -90,6 +96,9 @@ public class Monster implements ICanBattle
 
         if (special)
             effectiveMul = (attacker.getStageMultiplier(stage_special) * attacker.special) / (enemy.getStageMultiplier(stage_special) * enemy.special);
+
+        if (attacker.status == burned)
+            modifier *= 0.5;
 
         return Math.max(1, (int)(((2.0 * attacker.level * critBonus / 5 + 2) * power * effectiveMul) / 50 * modifier));
     }
@@ -281,6 +290,14 @@ public class Monster implements ICanBattle
             return stage_effectiveness[6 - stages[stat]];
     }
 
+    public double getEffectSpeedMultiplier()
+    {
+        if (this.status == Monster.paralyzed)
+            return 0.25;
+
+        return 1;
+    }
+
     public void setOwner(UserWrapper user)
     {
         this.owner = user.id;
@@ -304,6 +321,117 @@ public class Monster implements ICanBattle
     @Override
     public void queryMove(ChannelWrapper cw, Monster m)
     {
-        cw.currentBattle.actionDecided(this.moves[0]);
+        int count = 0;
+
+        for (int i = 0; i < this.moves.length; i++)
+        {
+            if (this.moves[count] != null)
+                count++;
+        }
+
+        cw.currentBattle.actionDecided(this.moves[(int) (Math.random() * count)]);
+    }
+
+    public String getStatusText()
+    {
+        if (this.hp <= 0)
+            return "FNT";
+        else if (this.status == asleep)
+            return "SLP";
+        else if (this.status == paralyzed)
+            return "PAR";
+        else if (this.status == poisoned)
+            return "PSN";
+        else if (this.status == burned)
+            return "BRN";
+        else if (this.status == frozen)
+            return "FRZ";
+        else
+            return null;
+    }
+
+    @Override
+    public String toString()
+    {
+        StringBuilder s = new StringBuilder();
+        s.append(this.species.id).append(",");
+        s.append(this.name).append(",");
+        s.append(this.hp).append(",");
+        s.append(this.level).append(",");
+        s.append(this.status).append(",");
+
+        for (Move m: this.moves)
+        {
+            if (m == null)
+                s.append(",");
+            else
+                s.append(m.name.toLowerCase()).append(",");
+        }
+
+        for (int m: this.movePP)
+        {
+            s.append(m).append(",");
+        }
+
+        s.append(this.originalTrainer).append(",");
+        s.append(this.xp).append(",");
+        s.append(this.hpEv).append(",");
+        s.append(this.attackEv).append(",");
+        s.append(this.defenseEv).append(",");
+        s.append(this.speedEv).append(",");
+        s.append(this.specialEv).append(",");
+        s.append(this.hpIv).append(",");
+        s.append(this.attackIv).append(",");
+        s.append(this.defenseIv).append(",");
+        s.append(this.speedIv).append(",");
+        s.append(this.specialIv).append(",");
+        s.append(this.maxHp).append(",");
+        s.append(this.attack).append(",");
+        s.append(this.defense).append(",");
+        s.append(this.speed).append(",");
+        s.append(this.special);
+
+        return s.toString();
+    }
+
+    public void fromString(String str)
+    {
+        String[] s = str.split(",");
+        this.species = Species.by_num.get(Integer.parseInt(s[0]));
+        this.name = s[1];
+        this.hp = Integer.parseInt(s[2]);
+        this.level = Integer.parseInt(s[3]);
+        this.status = Integer.parseInt(s[4]);
+
+        for (int i = 5; i < 9; i++)
+        {
+            this.moves[i - 5] = MoveList.by_name.get(s[i]);
+        }
+
+        for (int i = 9; i < 13; i++)
+        {
+            this.movePP[i - 9] = Integer.parseInt(s[i]);
+        }
+
+        this.originalTrainer = Long.parseLong(s[13]);
+        this.xp = Integer.parseInt(s[14]);
+
+        this.hpEv = Integer.parseInt(s[15]);
+        this.attackEv = Integer.parseInt(s[16]);
+        this.defenseEv = Integer.parseInt(s[17]);
+        this.speedEv = Integer.parseInt(s[18]);
+        this.specialEv = Integer.parseInt(s[19]);
+
+        this.hpIv = Integer.parseInt(s[20]);
+        this.attackIv = Integer.parseInt(s[21]);
+        this.defenseIv = Integer.parseInt(s[22]);
+        this.speedIv = Integer.parseInt(s[23]);
+        this.specialIv = Integer.parseInt(s[24]);
+
+        this.maxHp = Integer.parseInt(s[25]);
+        this.attack = Integer.parseInt(s[26]);
+        this.defense = Integer.parseInt(s[27]);
+        this.speed = Integer.parseInt(s[28]);
+        this.special = Integer.parseInt(s[29]);
     }
 }

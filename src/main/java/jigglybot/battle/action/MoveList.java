@@ -3,11 +3,13 @@ package jigglybot.battle.action;
 import jigglybot.monster.Monster;
 import jigglybot.monster.Type;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class MoveList
 {
     public static final HashMap<String, Move> by_name = new HashMap<>();
+    public static final ArrayList<Move> allMoves = new ArrayList<>();
 
     public static void setup()
     {
@@ -52,7 +54,8 @@ public class MoveList
 
         //bind
 
-        //bite
+        Move bite = new Move("bite", Type.normal, 25, 60, 100);
+        bite.flinchChance = 0.1;
 
         Move blizzard = new Move("blizzard", Type.ice, 5, 120, 90);
         blizzard.effectChance = 0.1;
@@ -61,8 +64,10 @@ public class MoveList
         Move bodySlam = new Move("body slam", Type.normal, 15, 85, 100);
         bodySlam.effectChance = 0.3;
         bodySlam.statusEffect = Monster.paralyzed;
+        bodySlam.cannotAddStatusEffectTo = Type.normal;
 
-        //bone club
+        Move boneClub = new Move("bone club", Type.normal, 20, 65, 85);
+        boneClub.flinchChance = 0.1;
 
         //boomerang
 
@@ -129,7 +134,7 @@ public class MoveList
 
         Move earthquake = new Move("earthquake", Type.ground, 10, 100, 100);
 
-        Move eggBomb = new Move("egg bomb", Type.ground, 10, 100, 75);
+        Move eggBomb = new Move("egg bomb", Type.normal, 10, 100, 75);
 
         Move ember = new Move("ember", Type.fire, 25, 40, 100);
         ember.effectChance = 0.1;
@@ -200,7 +205,8 @@ public class MoveList
 
         //hyper beam
 
-        //hyper fang
+        Move hyperFang = new Move("hyper fang", Type.normal, 15, 80, 90);
+        hyperFang.flinchChance = 0.1;
 
         Move hypnosis = new Move("hypnosis", Type.psychic, 20, 0, 60);
         hypnosis.statusEffect = Monster.asleep;
@@ -215,7 +221,7 @@ public class MoveList
 
         //jump kick
 
-        Move karateChop = new Move("karate chop", Type.normal, 25, 55, 100);
+        Move karateChop = new Move("karate chop", Type.normal, 25, 50, 100);
         karateChop.critMultiplier = 8;
 
         Move kinesis = new Move("kinesis", Type.psychic, 15, 0, 80);
@@ -231,14 +237,18 @@ public class MoveList
         leer.stage = Monster.stage_defense;
         leer.stageAmount = -1;
 
-        //lick
+        Move lick = new Move("lick", Type.ghost, 30, 20, 100);
+        lick.effectChance = 0.3;
+        lick.statusEffect = Monster.paralyzed;
+        lick.cannotAddStatusEffectTo = Type.ghost;
 
         //light screen
 
         Move lovelyKiss = new Move("lovely kiss", Type.normal, 10, 0, 75);
         lovelyKiss.statusEffect = Monster.asleep;
 
-        //low kick
+        Move lowKick = new Move("low kick", Type.fighting, 20, 50, 90);
+        lowKick.flinchChance = 0.3;
 
         Move meditate = new Move("meditate", Type.psychic, 40, 0, -1);
         meditate.stage = Monster.stage_attack;
@@ -320,13 +330,13 @@ public class MoveList
 
         //rolling kick
 
-        Move sandAttack = new Move("psychic", Type.ground, 15, 0, 100);
+        Move sandAttack = new Move("sand attack", Type.ground, 15, 0, 100);
         sandAttack.stage = Monster.stage_accuracy;
         sandAttack.stageAmount = -1;
 
         Move scratch = new Move("scratch", Type.normal, 35, 40, 100);
 
-        Move screech = new Move("screech", Type.ground, 10, 0, 85);
+        Move screech = new Move("screech", Type.normal, 40, 0, 85);
         screech.stage = Monster.stage_defense;
         screech.stageAmount = -2;
 
@@ -334,7 +344,7 @@ public class MoveList
 
         //selfdestruct
 
-        Move sharpen = new Move("sharpen", Type.ground, 30, 0, -1);
+        Move sharpen = new Move("sharpen", Type.normal, 30, 0, -1);
         sharpen.stage = Monster.stage_attack;
         sharpen.stageAmount = 1;
         sharpen.effectTargetsEnemy = false;
@@ -358,7 +368,7 @@ public class MoveList
         sludge.statusEffect = Monster.poisoned;
         sludge.effectChance = 0.4;
 
-        Move smog = new Move("smog", Type.poison, 20, 20, 100);
+        Move smog = new Move("smog", Type.poison, 20, 20, 70);
         smog.statusEffect = Monster.poisoned;
         smog.effectChance = 0.4;
 
@@ -369,5 +379,109 @@ public class MoveList
         //softboiled
 
         //solarbeam
+
+        //sonicboom
+
+        //spike cannon
+
+        //splash
+
+        Move spore = new Move("spore", Type.grass, 15, 0, 100);
+        spore.statusEffect = Monster.asleep;
+
+        Move stomp = new Move("stomp", Type.normal, 20, 65, 100);
+        stomp.flinchChance = 0.3;
+
+        Move strength = new Move("strength", Type.normal, 15, 80, 100);
+
+        Move stringShot = new Move("string shot", Type.normal, 40, 0, 95);
+        stringShot.stage = Monster.stage_speed;
+        stringShot.stageAmount = -1;
+
+        Move stunSpore = new Move("stun spore", Type.grass, 30, 0, 75);
+        stunSpore.statusEffect = Monster.paralyzed;
+
+        Move submission = new Move("submission", Type.fighting, 20, 80, 80);
+        submission.recoil = 0.25;
+
+        //substitute
+
+        //super fang
+
+        //supersonic
+
+        Move surf = new Move("surf", Type.water, 15, 95, 100);
+
+        Move swift = new Move("swift", Type.normal, 20, 60, -1);
+
+        Move swordsDance = new Move("swords dance", Type.normal, 30, 0, -1);
+        swordsDance.stage = Monster.stage_attack;
+        swordsDance.stageAmount = 2;
+        swordsDance.effectTargetsEnemy = false;
+
+        Move tackle = new Move("tackle", Type.normal, 35, 35, 95);
+
+        Move tailWhip = new Move("tail whip", Type.normal, 30, 0, -1);
+        tailWhip.stage = Monster.stage_defense;
+        tailWhip.stageAmount = -1;
+
+        Move takeDown = new Move("take down", Type.normal, 20, 90, 85);
+        takeDown.recoil = 0.25;
+
+        //teleport
+
+        //thrash
+
+        Move thunder = new Move("thunder", Type.electric, 10, 120, 70);
+        thunder.effectChance = 0.1;
+        thunder.statusEffect = Monster.paralyzed;
+        thunder.cannotAddStatusEffectTo = Type.electric;
+
+        Move thunderpunch = new Move("thunderpunch", Type.electric, 15, 75, 100);
+        thunderpunch.effectChance = 0.1;
+        thunderpunch.statusEffect = Monster.paralyzed;
+        thunderpunch.cannotAddStatusEffectTo = Type.electric;
+
+        Move thundershock = new Move("thundershock", Type.electric, 30, 40, 100);
+        thundershock.effectChance = 0.1;
+        thundershock.statusEffect = Monster.paralyzed;
+        thundershock.cannotAddStatusEffectTo = Type.electric;
+
+        Move thunderWave = new Move("thunder wave", Type.electric, 20, 0, 100);
+        thunderWave.effectChance = 1;
+        thunderWave.statusEffect = Monster.paralyzed;
+        thunderWave.cannotAddStatusEffectTo = Type.electric;
+
+        Move thunderbolt = new Move("thunderbolt", Type.electric, 15, 95, 100);
+        thunderbolt.effectChance = 0.1;
+        thunderbolt.statusEffect = Monster.paralyzed;
+        thunderbolt.cannotAddStatusEffectTo = Type.electric;
+
+        //toxic
+
+        //transform
+
+        Move triAttack = new Move("tri attack", Type.normal, 10, 80, 100);
+
+        //twineedle
+
+        Move vineWhip = new Move("vine whip", Type.grass, 10, 35, 100);
+
+        Move viseGrip = new Move("vise grip", Type.normal, 30, 55, 100);
+
+        Move waterGun = new Move("water gun", Type.water, 25, 40, 100);
+
+        Move waterfall = new Move("waterfall", Type.water, 15, 80, 100);
+
+        //whirlwind
+
+        Move windAttack = new Move("wind attack", Type.flying, 35, 35, 100);
+
+        Move withdraw = new Move("withdraw", Type.normal, 30, 0, -1);
+        withdraw.stage = Monster.stage_defense;
+        withdraw.stageAmount = 1;
+        withdraw.effectTargetsEnemy = false;
+
+        //wrap
     }
 }

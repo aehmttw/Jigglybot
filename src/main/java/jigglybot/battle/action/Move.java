@@ -16,13 +16,14 @@ public class Move implements IAction
     public final int accuracy;
     public final int maxPP;
 
-    public boolean useDamage = true;
     public boolean isSpecial;
 
     public double critMultiplier = 1;
     public int priority = 0;
 
     public double recoil = 0;
+
+    public double flinchChance = 0;
 
     public boolean effectTargetsEnemy = true;
     public double effectChance = 1;
@@ -31,8 +32,10 @@ public class Move implements IAction
     public int stage = -1;
     public int stageAmount = -1;
 
+    public int cannotAddStatusEffectTo = -1;
+
     public static final Move none = new Move("none", -1, 0, 0, 0);
-    public static final Move struggle = new Move("STRUGGLE", Type.normal, 10, 50, 100);
+    public static final Move struggle = new Move("struggle", Type.normal, -1, 50, 100);
 
     public TriConsumer<Monster, Monster, ChannelWrapper> damageBehavior;
     public QuadConsumer<Monster, Monster, Integer, ChannelWrapper> postDamageBehavior;
@@ -40,7 +43,11 @@ public class Move implements IAction
 
     public Move(String name, int type, int maxPP, int power, int accuracy)
     {
-        MoveList.by_name.put(name, this);
+        if (maxPP > 0)
+        {
+            MoveList.by_name.put(name, this);
+            MoveList.allMoves.add(this);
+        }
 
         this.name = name.toUpperCase();
         this.type = type;
@@ -87,9 +94,12 @@ public class Move implements IAction
             if (recoil > 0)
                 cw.queue(monster.name + "'s hit with recoil!");
             else if (recoil < 0)
-                cw.queue("Sucked health from ");
+                cw.queue("Sucked health from " + enemy.name + "!");
 
             monster.hp -= damage * this.recoil;
+
+            if ((int) (damage * recoil) == 0 && recoil != 0)
+                monster.hp -= Math.signum(recoil);
 
             monster.hp = Math.min(monster.maxHp, Math.max(0, monster.hp));
 
@@ -108,13 +118,19 @@ public class Move implements IAction
 
                 if (this.statusEffect >= 0 && m.status == 0)
                 {
-                    if (!(this.statusEffect == Monster.burned && (enemy.species.type1 == Type.fire || enemy.species.type2 == Type.fire)) &&
+                    if (!(this.cannotAddStatusEffectTo == m.species.type1 || this.cannotAddStatusEffectTo == m.species.type2) &&
+                            !(this.statusEffect == Monster.burned && (enemy.species.type1 == Type.fire || enemy.species.type2 == Type.fire)) &&
                             !(this.statusEffect == Monster.frozen && (enemy.species.type1 == Type.ice || enemy.species.type2 == Type.ice)) &&
                             !(this.statusEffect == Monster.poisoned && (enemy.species.type1 == Type.poison || enemy.species.type2 == Type.poison)))
                     {
                         m.status = this.statusEffect;
                         cw.queue(m.name + Monster.getEffectMessage(this.statusEffect));
+
+                        if (this.statusEffect == Monster.asleep)
+                            m.sleepTurns = (int) (Math.random() * 7 + 1);
                     }
+                    else if (this.power == 0)
+                        cw.queue("But, it failed!");
                 }
 
                 if (this.stage >= 0)
@@ -144,17 +160,19 @@ public class Move implements IAction
             int hp = defender.hp;
 
             this.damageBehavior.accept(attacker, defender, cw);
-            this.postDamageBehavior.accept(attacker, defender, defender.hp - hp, cw);
-            this.effectBehavior.accept(attacker, defender, cw);
+            this.postDamageBehavior.accept(attacker, defender, hp - defender.hp, cw);
+
+            if ((this.effectTargetsEnemy && defender.hp > 0) || (!this.effectTargetsEnemy && attacker.hp > 0))
+                this.effectBehavior.accept(attacker, defender, cw);
 
             return;
         }
 
-        if (useDamage)
+        if (this.power > 0)
             cw.queue(attacker.name + "'s attack missed!");
         else if (isSpecial)
-            cw.queue("It didn't affect " + defender.name + "!");
-        else
             cw.queue("But, it failed!");
+        else
+            cw.queue("It didn't affect " + defender.name + "!");
     }
 }

@@ -17,6 +17,7 @@ import jigglybot.monster.Dex;
 import jigglybot.monster.Monster;
 import jigglybot.monster.Species;
 
+import java.io.File;
 import java.util.function.Consumer;
 
 public class Bot
@@ -29,6 +30,8 @@ public class Bot
         Location.setup();
         Dex.setup();
         MoveList.setup();
+
+        new File(UserWrapper.save_dir).mkdirs();
 
         final String token = args[0];
         final DiscordClient client = DiscordClient.create(token);
@@ -54,21 +57,37 @@ public class Bot
             UserWrapper user = UserWrapper.get(m);
             ChannelWrapper setting = ChannelWrapper.get(channel);
 
+            if (content.startsWith("next") || content.equals("n") || content.equals(""))
+            {
+                setting.advance();
+            }
+
+            if (!setting.messages.isEmpty())
+            {
+                setting.messageChannel.createMessage("Can't do this now!").block();
+                return;
+            }
+
+            if (setting.currentDialog != null)
+            {
+                if (setting.currentDialog.user != user)
+                    setting.messageChannel.createMessage("Please wait for " + setting.currentDialog.user.name + " to respond!").block();
+                else
+                    setting.currentDialog.input(content);
+
+                return;
+            }
+
             if (content.startsWith("loc"))
             {
                 printLocation(channel, m, true);
-            }
-
-            if (content.startsWith("next"))
-            {
-                setting.advance();
             }
 
             if (content.startsWith("help"))
             {
                 String s = "It's a message from PROF. OAK!```Hi! I see you have discovered my newest creation, the JIGGLYBOT! " +
                         "JIGGLYBOT will guide you through the wonderful KANTO world of POKéMON! If you're lost, just type " + prefix + "loc and " +
-                        "JIGGLYBOT will tell you where you are. JIGGLYBOT will usually capitalize things you can do, such as HEAL or MOVE." +
+                        "JIGGLYBOT will tell you where you are. JIGGLYBOT will usually capitalize things you can do, such as HEAL or MOVE. " +
                         "You can do these things by typing them with a '" + prefix + "' before them, like " + prefix + "heal or " + prefix + "move. When " +
                         "there's more JIGGLYBOT wants to tell you, it will add a down arrow reaction. Just type " + prefix + "next or click the arrow " +
                         "to see what else JIGGLYBOT wants to tell you. Please help me document every species of POKéMON with your POKéDEX! " +
@@ -133,10 +152,99 @@ public class Bot
                 channel.createMessage("Jigglybot loves all of you <3 !").block();
             }
 
+            if (content.startsWith("save"))
+            {
+                if (user.save())
+                    channel.createMessage(user.name + " saved the game!").block();
+                else
+                    channel.createMessage("Failed to save the game!").block();
+            }
+
+            if (content.startsWith("reset"))
+            {
+                setting.currentDialog = new DialogEraseAllData(setting, user);
+                setting.currentDialog.execute();
+            }
+
+            if (content.startsWith("pokemon"))
+            {
+                StringBuilder s = new StringBuilder("```Your POKéMON:\n");
+
+                for (int i = 0; i < user.squad.length; i++)
+                {
+                    if (user.squad[i] != null)
+                    {
+                        if (user.squad[i].hp <= 0)
+                            s.append(i + 1).append(". ").append(user.squad[i].name).append(" FNT\n");
+                        else if (user.squad[i].status != 0)
+                            s.append(i + 1).append(". ").append(user.squad[i].name).append(" ").append(user.squad[i].getStatusText()).append("\n");
+                        else
+                            s.append(i + 1).append(". ").append(user.squad[i].name).append(" L").append(user.squad[i].level).append(" (HP ").append(user.squad[i].hp).append("/").append(user.squad[i].maxHp).append(")\n");
+                    }
+                }
+
+                if (user.storage.size() > 0)
+                    s.append("You also have " + user.storage.size() + " other POKéMON in STORAGE!");
+
+                s.append("```");
+                setting.messageChannel.createMessage(s.toString()).block();
+            }
+
+            if (content.startsWith("storage"))
+            {
+                StringBuilder s = new StringBuilder("```Your POKéMON storage PC:\n");
+
+                for (int i = 0; i < user.storage.size(); i++)
+                {
+                    Monster mon = user.storage.get(i);
+                    if (mon != null)
+                    {
+                        if (mon.hp <= 0)
+                            s.append(i + 1).append(". ").append(mon.name).append(" FNT\n");
+                        else if (mon.status != 0)
+                            s.append(i + 1).append(". ").append(mon.name).append(" ").append(mon.getStatusText()).append("\n");
+                        else
+                            s.append(i + 1).append(". ").append(mon.name).append(" L").append(mon.level).append(" (HP ").append(mon.hp).append("/").append(mon.maxHp).append(")\n");
+                    }
+                }
+
+                s.append("```");
+                setting.messageChannel.createMessage(s.toString()).block();
+            }
+
+
+            if (content.startsWith("swap"))
+            {
+                String[] s = content.split(" ");
+
+                try
+                {
+                    int first = Integer.parseInt(s[1]) - 1;
+                    int second = Integer.parseInt(s[2]) - 1;
+
+                    if (first >= 0 && second >= 0 && first < user.squad.length && second < user.squad.length &&
+                            user.squad[first] != null && user.squad[second] != null)
+                    {
+                        Monster temp = user.squad[first];
+                        user.squad[first] = user.squad[second];
+                        user.squad[second] = temp;
+                        setting.messageChannel.createMessage("Swapped " + user.squad[first].name + " and " + user.squad[second].name + "!").block();
+                    }
+                    else
+                        setting.messageChannel.createMessage("Invalid POKéMON numbers specified!").block();
+                }
+                catch (Exception e)
+                {
+                    setting.messageChannel.createMessage("Please supply 2 POKéMON numbers to swap!").block();
+                }
+            }
+
             if (content.startsWith("spawn"))
             {
                 if (setting.location.spawnEntries.isEmpty())
                     channel.createMessage("Nothing spawns in " + setting.location.name + "!").block();
+                else if (setting.currentBattle != null)
+                    channel.createMessage("Finish the battle first!").block();
                 else
                 {
                     Monster monster = setting.location.spawn();
@@ -164,6 +272,14 @@ public class Bot
                     setting.currentBattle.inputFight(user, null);
                 else
                     setting.currentBattle.inputFight(user, content.substring(content.indexOf(" ") + 1));
+            }
+
+            if (content.startsWith("learn") && setting.currentBattle != null)
+            {
+                if (!content.contains(" "))
+                    setting.currentBattle.inputLearn(user, null);
+                else
+                    setting.currentBattle.inputLearn(user, content.substring(content.indexOf(" ") + 1));
             }
 
             if (content.startsWith("switch") && setting.currentBattle != null)
@@ -206,6 +322,7 @@ public class Bot
                         if (user.squad[i] != null)
                         {
                             user.squad[i].hp = user.squad[i].maxHp;
+                            user.squad[i].status = 0;
 
                             for (int j = 0; j < user.squad[i].moves.length; j++)
                             {
@@ -216,6 +333,8 @@ public class Bot
                             }
                         }
                     }
+
+                    user.save();
                 }
             }
 
@@ -231,12 +350,6 @@ public class Bot
 
                     if (arg.equals("all"))
                     {
-                        if (!setting.messages.isEmpty())
-                        {
-                            channel.createMessage("Can't do this now!").block();
-                            return;
-                        }
-
                         StringBuilder s = new StringBuilder("All POKéDEX entries:\n");
 
                         int in = 0;

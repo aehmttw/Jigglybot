@@ -15,6 +15,7 @@ public class Run implements IAction
             cw.queue("Whose POKéMON will JOIN next?");
 
             b.player1.inBattle = false;
+            b.player1.endBattle();
             b.p1Mon = null;
             b.p1Damage = 0;
             b.player1 = null;
