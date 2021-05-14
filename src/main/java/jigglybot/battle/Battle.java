@@ -579,6 +579,31 @@ public class Battle
             channel.queue(m.name + " flinched!");
             return false;
         }
+        else if (m.confuseTurns > 0)
+        {
+            m.confuseTurns--;
+
+            if (m.confuseTurns <= 0)
+                channel.queue(m.name + "'s confused no more!");
+            else
+            {
+                channel.queue(m.name + " is confused!");
+
+                if (Math.random() < 0.5)
+                {
+                    channel.queue("It hurt itself in its confusion!");
+
+                    m.hp -= Monster.getDamage(m, m, 40, false, false, 1);
+
+                    if (m.hp < 0)
+                        m.hp = 0;
+
+                    channel.queue(m.name + "'s HP: " + m.hp + "/" + m.maxHp);
+
+                    return false;
+                }
+            }
+        }
 
         return true;
     }

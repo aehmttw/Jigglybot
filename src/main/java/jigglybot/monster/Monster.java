@@ -67,6 +67,8 @@ public class Monster implements ICanBattle
     public static final int burned = 4;
     public static final int frozen = 5;
 
+    public static final int confused = 6;
+
     public Monster(Species species, int level)
     {
         this.species = species;
@@ -81,8 +83,10 @@ public class Monster implements ICanBattle
         this.moves[2] = MoveList.allMoves.get((int) (MoveList.allMoves.size() * Math.random()));
     }
 
-    public Monster(String s)
+    public Monster(String s, UserWrapper owner)
     {
+        this.isWild = false;
+        this.owner = owner.id;
         this.fromString(s);
     }
 
@@ -258,6 +262,8 @@ public class Monster implements ICanBattle
             return "DEFENSE";
         else if (stat == stage_speed)
             return "SPEED";
+        else if (stat == stage_special)
+            return "SPECIAL";
         else if (stat == stage_evasion)
             return "EVASION";
         else if (stat == stage_accuracy)
@@ -276,8 +282,10 @@ public class Monster implements ICanBattle
             return " was poisoned!";
         else if (stat == burned)
             return " was burned!";
-        else if (stat == stage_accuracy)
+        else if (stat == frozen)
             return " was frozen solid!";
+        else if (stat == confused)
+            return " became confused!";
         else
             return " invalid effect!";
     }
@@ -433,5 +441,19 @@ public class Monster implements ICanBattle
         this.defense = Integer.parseInt(s[27]);
         this.speed = Integer.parseInt(s[28]);
         this.special = Integer.parseInt(s[29]);
+    }
+
+    public String getDisplayString(int index)
+    {
+        StringBuilder s = new StringBuilder();
+
+        if (this.hp <= 0)
+            s.append(index + 1).append(". ").append(this.name).append(" FNT\n");
+        else if (this.status != 0)
+            s.append(index + 1).append(". ").append(this.name).append(" ").append(this.getStatusText()).append(" (HP ").append(this.hp).append("/").append(this.maxHp).append(")\n");
+        else
+            s.append(index + 1).append(". ").append(this.name).append(" L").append(this.level).append(" (HP ").append(this.hp).append("/").append(this.maxHp).append(")\n");
+
+        return s.toString();
     }
 }

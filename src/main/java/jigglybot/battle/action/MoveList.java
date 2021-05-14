@@ -85,9 +85,12 @@ public class MoveList
 
         //comet punch
 
-        //confuse ray
+        Move confuseRay = new Move("confuse ray", Type.ghost, 10, 0, 100);
+        confuseRay.statusEffect = Monster.confused;
 
-        //confusion
+        Move confusion = new Move("confusion", Type.psychic, 25, 50, 100);
+        confusion.effectChance = 0.1;
+        confusion.statusEffect = Monster.confused;
 
         Move constrict = new Move("constrict", Type.normal, 35, 10, 100);
         constrict.effectChance = 0.33;
@@ -297,7 +300,9 @@ public class MoveList
 
         Move pound = new Move("pound", Type.normal, 35, 40, 100);
 
-        //psybeam
+        Move psybeam = new Move("psybeam", Type.psychic, 20, 65, 100);
+        psybeam.effectChance = 0.1;
+        psybeam.statusEffect = Monster.confused;
 
         Move psychic = new Move("psychic", Type.normal, 10, 90, 100);
         psychic.stage = Monster.stage_special;
@@ -408,7 +413,8 @@ public class MoveList
 
         //super fang
 
-        //supersonic
+        Move supersonic = new Move("supersonic", Type.normal, 20, 0, 55);
+        supersonic.statusEffect = Monster.confused;
 
         Move surf = new Move("surf", Type.water, 15, 95, 100);
 

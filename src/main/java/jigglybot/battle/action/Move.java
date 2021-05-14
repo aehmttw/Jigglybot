@@ -24,6 +24,7 @@ public class Move implements IAction
     public double recoil = 0;
 
     public double flinchChance = 0;
+    public double confuseChance = 0;
 
     public boolean effectTargetsEnemy = true;
     public double effectChance = 1;
@@ -87,6 +88,9 @@ public class Move implements IAction
                 defender.hp = 0;
 
             cw.queue(defender.name + "'s HP: " + defender.hp + "/" + defender.maxHp);
+
+            if (Math.random() < this.flinchChance)
+                defender.flinched = true;
         };
 
         this.postDamageBehavior = (monster, enemy, damage, cw) ->
@@ -116,18 +120,25 @@ public class Move implements IAction
                 if (!this.effectTargetsEnemy)
                     m = monster;
 
-                if (this.statusEffect >= 0 && m.status == 0)
+                if (this.statusEffect >= 0)
                 {
                     if (!(this.cannotAddStatusEffectTo == m.species.type1 || this.cannotAddStatusEffectTo == m.species.type2) &&
                             !(this.statusEffect == Monster.burned && (enemy.species.type1 == Type.fire || enemy.species.type2 == Type.fire)) &&
                             !(this.statusEffect == Monster.frozen && (enemy.species.type1 == Type.ice || enemy.species.type2 == Type.ice)) &&
-                            !(this.statusEffect == Monster.poisoned && (enemy.species.type1 == Type.poison || enemy.species.type2 == Type.poison)))
+                            !(this.statusEffect == Monster.poisoned && (enemy.species.type1 == Type.poison || enemy.species.type2 == Type.poison)) &&
+                            !(this.statusEffect == Monster.confused && m.confuseTurns > 0) &&
+                            (m.status == 0 || this.statusEffect == Monster.confused))
                     {
-                        m.status = this.statusEffect;
+                        if (this.statusEffect != Monster.confused)
+                            m.status = this.statusEffect;
+
                         cw.queue(m.name + Monster.getEffectMessage(this.statusEffect));
 
                         if (this.statusEffect == Monster.asleep)
                             m.sleepTurns = (int) (Math.random() * 7 + 1);
+
+                        if (this.statusEffect == Monster.confused)
+                            m.confuseTurns = (int) (Math.random() * 4 + 3);
                     }
                     else if (this.power == 0)
                         cw.queue("But, it failed!");

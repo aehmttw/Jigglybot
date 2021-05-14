@@ -14,9 +14,11 @@ public class UserWrapper implements ICanBattle
 {
     public static HashMap<Long, UserWrapper> wrappers = new HashMap<>();
     public static final String save_dir = "userdata";
+    public static final int entries_per_page = 20;
 
     public long id;
     public String name;
+    public int page = 0;
 
     public Monster[] squad = new Monster[6];
     public ArrayList<Monster> storage = new ArrayList<>();
@@ -87,12 +89,7 @@ public class UserWrapper implements ICanBattle
         {
             if (this.squad[i] != null)
             {
-                if (this.squad[i].hp <= 0)
-                    s.append(i + 1).append(". ").append(this.squad[i].name).append(" FNT\n");
-                else if (this.squad[i].status != 0)
-                    s.append(i + 1).append(". ").append(this.squad[i].name).append(" ").append(this.squad[i].getStatusText()).append("\n");
-                else
-                    s.append(i + 1).append(". ").append(this.squad[i].name).append(" L").append(this.squad[i].level).append(" (HP ").append(this.squad[i].hp).append("/").append(this.squad[i].maxHp).append(")\n");
+                s.append(this.squad[i].getDisplayString(i));
             }
         }
 
@@ -162,13 +159,13 @@ public class UserWrapper implements ICanBattle
                 {
                     if (mode == 1)
                     {
-                        this.squad[monsterCount] = new Monster(line);
+                        this.squad[monsterCount] = new Monster(line, this);
                         monsterCount++;
                         this.initialized = true;
                     }
                     else if (mode == 2)
                     {
-                        this.storage.add(new Monster(line));
+                        this.storage.add(new Monster(line, this));
                     }
                 }
 
@@ -209,5 +206,46 @@ public class UserWrapper implements ICanBattle
     public File getFile()
     {
         return new File(save_dir + "/" + this.id);
+    }
+
+    public void printMonsters(ChannelWrapper setting)
+    {
+        StringBuilder s = new StringBuilder("```Your POKéMON:\n");
+
+        for (int i = 0; i < this.squad.length; i++)
+        {
+            if (this.squad[i] != null)
+                s.append(this.squad[i].getDisplayString(i));
+        }
+
+        if (setting.location.hasHeal)
+            s.append("You can DEPOSIT or WITHDRAW POKéMON into the STORAGE PC!");
+
+        if (this.storage.size() > 0)
+        {
+            s.append("``````Your POKéMON storage PC:\n");
+
+            if (!setting.location.hasHeal)
+                s.append("You also have ").append(this.storage.size()).append(" other POKéMON in STORAGE! (Access STORAGE PC from a POKéMON CENTER!)");
+            else
+            {
+
+                for (int i = this.page * entries_per_page; i < Math.min(this.storage.size(), (this.page + 1) * entries_per_page); i++)
+                {
+                    Monster mon = this.storage.get(i);
+
+                    if (mon != null)
+                        s.append(mon.getDisplayString(i));
+                }
+
+                if (this.storage.size() > entries_per_page)
+                    s.append("PAGE ").append(this.page + 1).append(" of ").append((this.storage.size() - 1) / entries_per_page + 1).append("\n");
+
+                s.append("You can also RELEASE POKéMON from the STORAGE PC!");
+            }
+        }
+
+        s.append("```");
+        setting.messageChannel.createMessage(s.toString()).block();
     }
 }

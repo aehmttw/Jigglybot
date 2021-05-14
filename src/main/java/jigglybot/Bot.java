@@ -18,6 +18,7 @@ import jigglybot.monster.Monster;
 import jigglybot.monster.Species;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.function.Consumer;
 
 public class Bot
@@ -168,50 +169,8 @@ public class Bot
 
             if (content.startsWith("pokemon"))
             {
-                StringBuilder s = new StringBuilder("```Your POKéMON:\n");
-
-                for (int i = 0; i < user.squad.length; i++)
-                {
-                    if (user.squad[i] != null)
-                    {
-                        if (user.squad[i].hp <= 0)
-                            s.append(i + 1).append(". ").append(user.squad[i].name).append(" FNT\n");
-                        else if (user.squad[i].status != 0)
-                            s.append(i + 1).append(". ").append(user.squad[i].name).append(" ").append(user.squad[i].getStatusText()).append("\n");
-                        else
-                            s.append(i + 1).append(". ").append(user.squad[i].name).append(" L").append(user.squad[i].level).append(" (HP ").append(user.squad[i].hp).append("/").append(user.squad[i].maxHp).append(")\n");
-                    }
-                }
-
-                if (user.storage.size() > 0)
-                    s.append("You also have " + user.storage.size() + " other POKéMON in STORAGE!");
-
-                s.append("```");
-                setting.messageChannel.createMessage(s.toString()).block();
+                user.printMonsters(setting);
             }
-
-            if (content.startsWith("storage"))
-            {
-                StringBuilder s = new StringBuilder("```Your POKéMON storage PC:\n");
-
-                for (int i = 0; i < user.storage.size(); i++)
-                {
-                    Monster mon = user.storage.get(i);
-                    if (mon != null)
-                    {
-                        if (mon.hp <= 0)
-                            s.append(i + 1).append(". ").append(mon.name).append(" FNT\n");
-                        else if (mon.status != 0)
-                            s.append(i + 1).append(". ").append(mon.name).append(" ").append(mon.getStatusText()).append("\n");
-                        else
-                            s.append(i + 1).append(". ").append(mon.name).append(" L").append(mon.level).append(" (HP ").append(mon.hp).append("/").append(mon.maxHp).append(")\n");
-                    }
-                }
-
-                s.append("```");
-                setting.messageChannel.createMessage(s.toString()).block();
-            }
-
 
             if (content.startsWith("swap"))
             {
@@ -229,6 +188,7 @@ public class Bot
                         user.squad[first] = user.squad[second];
                         user.squad[second] = temp;
                         setting.messageChannel.createMessage("Swapped " + user.squad[first].name + " and " + user.squad[second].name + "!").block();
+                        user.printMonsters(setting);
                     }
                     else
                         setting.messageChannel.createMessage("Invalid POKéMON numbers specified!").block();
@@ -236,6 +196,170 @@ public class Bot
                 catch (Exception e)
                 {
                     setting.messageChannel.createMessage("Please supply 2 POKéMON numbers to swap!").block();
+                }
+            }
+
+            if (content.startsWith("page"))
+            {
+                if (user.inBattle)
+                    channel.createMessage("Finish the battle first!").block();
+                else if (!setting.location.hasHeal)
+                    channel.createMessage("There is no POKéMON CENTER in " + setting.location.name + "!").block();
+                else
+                {
+                    String[] s = content.split(" ");
+
+                    try
+                    {
+                        int num = Integer.parseInt(s[1]) - 1;
+
+                        if (num >= 0 && num <= (user.storage.size() - 1) / UserWrapper.entries_per_page)
+                        {
+                            channel.createMessage("Set page to " + (num + 1) + "!").block();
+                            user.page = num;
+                            user.printMonsters(setting);
+                        }
+                        else
+                            channel.createMessage("Maximum page is " + (1 + (user.storage.size() - 1) / UserWrapper.entries_per_page) + "!").block();
+                    }
+                    catch (Exception e)
+                    {
+                        setting.messageChannel.createMessage("Invalid page number specified!").block();
+                    }
+                }
+            }
+
+            if (content.startsWith("deposit"))
+            {
+                if (user.inBattle)
+                    channel.createMessage("Finish the battle first!").block();
+                else if (!setting.location.hasHeal)
+                    channel.createMessage("There is no POKéMON CENTER in " + setting.location.name + "!").block();
+                else
+                {
+                    String[] s = content.split(" ");
+
+                    try
+                    {
+                        int index = Integer.parseInt(s[1]) - 1;
+
+                        if (index >= 0 && index < user.squad.length && user.squad[index] != null)
+                        {
+                            if (index == 0 && user.squad[1] == null)
+                                setting.messageChannel.createMessage("You can't deposit the last POKéMON!").block();
+
+                            Monster mon = user.squad[index];
+                            user.storage.add(mon);
+
+                            for (int i = index + 1; i < user.squad.length; i++)
+                            {
+                                user.squad[i - 1] = user.squad[i];
+                                user.squad[i] = null;
+                            }
+
+                            setting.messageChannel.createMessage("Sent " + mon.name + " to STORAGE PC!").block();
+                            user.printMonsters(setting);
+                        }
+                        else
+                            setting.messageChannel.createMessage("Invalid POKéMON number specified!").block();
+                    }
+                    catch (Exception e)
+                    {
+                        setting.messageChannel.createMessage("Please supply a POKéMON number to send to STORAGE PC!").block();
+                    }
+                }
+            }
+
+            if (content.startsWith("withdraw"))
+            {
+                if (user.inBattle)
+                    channel.createMessage("Finish the battle first!").block();
+                else if (!setting.location.hasHeal)
+                    channel.createMessage("There is no POKéMON CENTER in " + setting.location.name + "!").block();
+                else
+                {
+                    String[] s = content.split(" ");
+
+                    try
+                    {
+                        int index = Integer.parseInt(s[1]) - 1;
+
+                        if (index >= 0 && index < user.storage.size())
+                        {
+                            int free = -1;
+                            for (int i = 0; i < user.squad.length; i++)
+                            {
+                                if (user.squad[i] == null)
+                                {
+                                    free = i;
+                                    break;
+                                }
+                            }
+
+                            if (free == -1)
+                                setting.messageChannel.createMessage("You can't take any more POKéMON. Deposit POKéMON first.").block();
+                            else
+                            {
+                                Monster mon = user.storage.remove(index);
+                                setting.messageChannel.createMessage("Took " + mon.name + " from STORAGE PC!").block();
+                                user.squad[free] = mon;
+
+                                user.printMonsters(setting);
+                            }
+                        }
+                        else
+                            setting.messageChannel.createMessage("Invalid POKéMON number specified!").block();
+                    }
+                    catch (Exception e)
+                    {
+                        setting.messageChannel.createMessage("Please supply a POKéMON number to withdraw from STORAGE PC!").block();
+                    }
+                }
+            }
+
+            if (content.startsWith("release"))
+            {
+                if (user.inBattle)
+                    channel.createMessage("Finish the battle first!").block();
+                else if (!setting.location.hasHeal)
+                    channel.createMessage("There is no POKéMON CENTER in " + setting.location.name + "!").block();
+                else
+                {
+                    String[] s = content.split(" ");
+
+                    ArrayList<Monster> mons = new ArrayList<>();
+
+                    if (s.length <= 1)
+                    {
+                        setting.messageChannel.createMessage("Please supply POKéMON numbers to release from STORAGE PC!").block();
+                        return;
+                    }
+
+                    try
+                    {
+                        for (int i = 1; i < s.length; i++)
+                        {
+                            int index = Integer.parseInt(s[i]) - 1;
+
+                            if (index >= 0 && index < user.storage.size())
+                            {
+                                Monster mon = user.storage.get(index);
+                                mons.add(mon);
+                            }
+                            else
+                            {
+                                setting.messageChannel.createMessage("Invalid POKéMON numbers specified!").block();
+                                return;
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        setting.messageChannel.createMessage("Please supply POKéMON numbers to release from STORAGE PC!").block();
+                    }
+
+                    setting.currentDialog = new DialogReleaseMonsters(setting, user, mons);
+                    setting.currentDialog.execute();
                 }
             }
 
@@ -299,7 +423,7 @@ public class Bot
             if (content.startsWith("heal"))
             {
                 if (user.inBattle)
-                    channel.createMessage("Can't do this now!").block();
+                    channel.createMessage("Finish the battle first!").block();
                 else if (!setting.location.hasHeal)
                     channel.createMessage("There is no POKéMON CENTER in " + setting.location.name + "!").block();
                 else
