@@ -4,6 +4,7 @@ import jigglybot.ChannelWrapper;
 import jigglybot.ICanBattle;
 import jigglybot.UserWrapper;
 import jigglybot.battle.Battle;
+import jigglybot.dialog.DialogAddDexEntry;
 
 public class PokeBall extends BattleItemType
 {
@@ -65,29 +66,13 @@ public class PokeBall extends BattleItemType
             cw.queue("The BALL shakes...");
             cw.queue("The BALL shakes again...");
             cw.queue("The BALL shakes violently...");
-            cw.queue("All right! " + b.p2Mon.name + " was caught!");
+            cw.queue("All right! " + b.p2Mon.getName() + " was caught!");
 
             b.p2Mon.setOwner((UserWrapper) u);
 
-            boolean found = false;
+            cw.currentDialog = new DialogAddDexEntry(cw, b.player1, b.p2Mon);
+            cw.currentDialog.execute();
 
-            for (int x = 0; x < ((UserWrapper) u).squad.length; x++)
-            {
-                if (((UserWrapper) u).squad[x] == null)
-                {
-                    found = true;
-                    ((UserWrapper) u).squad[x] = b.p2Mon;
-                    break;
-                }
-            }
-
-            if (!found)
-            {
-                ((UserWrapper) u).storage.add(b.p2Mon);
-                cw.queue(b.p2Mon.name + " was transferred to STORAGE PC!");
-            }
-
-            cw.advance();
             b.p2Mon = null;
             b.ended = true;
         }

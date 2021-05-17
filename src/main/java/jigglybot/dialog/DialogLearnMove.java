@@ -1,5 +1,8 @@
-package jigglybot;
+package jigglybot.dialog;
 
+import jigglybot.ChannelWrapper;
+import jigglybot.Dialog;
+import jigglybot.UserWrapper;
 import jigglybot.battle.action.Move;
 import jigglybot.monster.Monster;
 
@@ -134,8 +137,8 @@ public class DialogLearnMove extends Dialog
     {
         if (this.location == 0)
         {
-            this.channelWrapper.queue(this.monster.name + " is trying to learn " + this.move.name + "!");
-            this.channelWrapper.queue("But, " + this.monster.name + " can't learn more than 4 moves!");
+            this.channelWrapper.queue(this.monster.getName() + " is trying to learn " + this.move.name + "!");
+            this.channelWrapper.queue("But, " + this.monster.getName() + " can't learn more than 4 moves!");
             this.channelWrapper.queue("Delete an older move to make room for " + this.move.name + "? (YES/NO)");
             this.channelWrapper.advance();
         }
@@ -163,7 +166,7 @@ public class DialogLearnMove extends Dialog
         else if (this.location == 3)
         {
             this.channelWrapper.queue("1, 2, and... Poof!");
-            this.channelWrapper.queue(this.monster.name + " forgot " + this.monster.moves[forgetMove].name + "!");
+            this.channelWrapper.queue(this.monster.getName() + " forgot " + this.monster.moves[forgetMove].name + "!");
             this.channelWrapper.queue("And...");
 
             this.location = 4;
@@ -171,7 +174,7 @@ public class DialogLearnMove extends Dialog
         }
         else if (this.location == 4)
         {
-            this.channelWrapper.queue(this.monster.name + " learned " + this.move.name + "!");
+            this.channelWrapper.queue(this.monster.getName() + " learned " + this.move.name + "!");
             this.monster.moves[this.forgetMove] = this.move;
             this.monster.movePP[this.forgetMove] = this.move.maxPP;
             this.channelWrapper.advance();
@@ -180,7 +183,7 @@ public class DialogLearnMove extends Dialog
         }
         else if (this.location == 5)
         {
-            this.channelWrapper.queue(this.monster.name + " did not learn " + this.move.name + "!");
+            this.channelWrapper.queue(this.monster.getName() + " did not learn " + this.move.name + "!");
             this.channelWrapper.advance();
 
             this.channelWrapper.currentDialog = null;

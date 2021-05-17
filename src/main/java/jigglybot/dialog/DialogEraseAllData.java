@@ -1,4 +1,8 @@
-package jigglybot;
+package jigglybot.dialog;
+
+import jigglybot.ChannelWrapper;
+import jigglybot.Dialog;
+import jigglybot.UserWrapper;
 
 public class DialogEraseAllData extends Dialog
 {

@@ -3,11 +3,13 @@ package jigglybot;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
+import discord4j.core.spec.MessageCreateSpec;
 import jigglybot.battle.Battle;
 import jigglybot.location.Location;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.function.Consumer;
 
 public class ChannelWrapper
 {
@@ -54,7 +56,24 @@ public class ChannelWrapper
         if (this.messages.isEmpty())
             return;
 
-        Message m = messageChannel.createMessage(this.messages.remove(0)).block();
+        String s = this.messages.remove(0);
+
+        if (s.startsWith("*"))
+        {
+            String img = s.substring(1, s.lastIndexOf("*"));
+            s = s.substring(s.lastIndexOf("*") + 1);
+
+            messageChannel.createMessage(new Consumer<MessageCreateSpec>()
+            {
+                @Override
+                public void accept(MessageCreateSpec messageCreateSpec)
+                {
+                    messageCreateSpec.addFile("/icon.png", getClass().getResourceAsStream(img));
+                }
+            }).block();
+        }
+
+        Message m = messageChannel.createMessage(s).block();
 
         if (this.messages.size() > 0)
         {

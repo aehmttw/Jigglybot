@@ -1,7 +1,7 @@
 package jigglybot.battle;
 
 import jigglybot.ChannelWrapper;
-import jigglybot.DialogLearnMove;
+import jigglybot.dialog.DialogLearnMove;
 import jigglybot.ICanBattle;
 import jigglybot.UserWrapper;
 import jigglybot.battle.action.*;
@@ -66,7 +66,7 @@ public class Battle
         else if (this.p1Mon != null) // fix
             channel.messageChannel.createMessage("You can JOIN when a POKéMON faints!").block();
         else if (player.inBattle)
-            channel.messageChannel.createMessage("You're already in a battle!");
+            channel.messageChannel.createMessage("You're already in a battle!").block();
         else
         {
             boolean canJoin = false;
@@ -99,25 +99,29 @@ public class Battle
                 player.inBattle = true;
                 this.p1Mon = player.getNextMonster();
                 this.p1Damage = 0;
+                this.player1.dex[this.p2Mon.species.id] = Math.max(this.player1.dex[this.p2Mon.species.id], 1);
 
                 this.p1Participants.add(p1Mon);
 
                 channel.queue(player.name + " joined the battle!");
 
+                String img = ("*" + "/back/" + p1Mon.species.name.toUpperCase())
+                        .replace("♂", "m").replace("♀", "f").replace("'", "").toLowerCase() + "b.png*";
+
                 if (p2Mon == null)
-                    channel.queue("Go " + p1Mon.name + "!");
+                    channel.queue(img + "Go " + p1Mon.getName() + "!");
                 else
                 {
                     double frac = p2Mon.hp * 1.0 / p2Mon.maxHp;
 
                     if (frac >= 0.7)
-                        channel.queue("Go! " + p1Mon.name + "!");
+                        channel.queue(img + "Go! " + p1Mon.getName() + "!");
                     else if (frac >= 0.4)
-                        channel.queue("Do it! " + p1Mon.name + "!");
+                        channel.queue(img + "Do it! " + p1Mon.getName() + "!");
                     else if (frac >= 0.1)
-                        channel.queue("Get'm! " + p1Mon.name + "!");
+                        channel.queue(img + "Get'm! " + p1Mon.getName() + "!");
                     else
-                        channel.queue("The enemy's weak! Get'm! " + p1Mon.name + "!");
+                        channel.queue(img + "The enemy's weak! Get'm! " + p1Mon.getName() + "!");
                 }
 
                 this.turnStart();
@@ -183,7 +187,6 @@ public class Battle
             {
                 if (m.movePP[move] > 0)
                 {
-                    m.movePP[move]--;
                     this.actionDecided(m.moves[move]);
                 }
                 else
@@ -197,7 +200,7 @@ public class Battle
                         }
                     }
 
-                    this.channel.queue(m.name + " has no moves left!");
+                    this.channel.queue(m.getName() + " has no moves left!");
                     this.actionDecided(Move.struggle);
                 }
             }
@@ -257,7 +260,7 @@ public class Battle
             else if (user.squad[index].hp <= 0)
                 this.channel.messageChannel.createMessage("There's no will to fight!").block();
             else if (user.squad[index] == this.p1Mon || user.squad[index] == this.p2Mon)
-                this.channel.messageChannel.createMessage(user.squad[index].name + " is already out!").block();
+                this.channel.messageChannel.createMessage(user.squad[index].getName() + " is already out!").block();
             else
                 this.actionDecided(new SwitchMonster(user.squad[index]));
         }
@@ -523,7 +526,7 @@ public class Battle
         {
             defender.hp = 0;
 
-            this.channel.queue(defender.name + " fainted!");
+            this.channel.queue(defender.getName() + " fainted!");
 
             for (Monster m: participants)
             {
@@ -532,10 +535,10 @@ public class Battle
                     int xp = m.xp;
                     boolean lvlup = m.defeatedEnemy(defender, participants.size());
 
-                    this.channel.queue(m.name + " gained " + (m.xp - xp) + " EXP. Points!");
+                    this.channel.queue(m.getName() + " gained " + (m.xp - xp) + " EXP. Points!");
 
                     if (lvlup)
-                        this.channel.queue(m.name + " grew to level " + m.level + "!");
+                        this.channel.queue(m.getName() + " grew to level " + m.level + "!");
                 }
             }
 
@@ -554,10 +557,10 @@ public class Battle
             if (m.sleepTurns == 0)
             {
                 m.status = 0;
-                channel.queue(m.name + " woke up!");
+                channel.queue(m.getName() + " woke up!");
             }
             else
-                channel.queue(m.name + " is fast asleep!");
+                channel.queue(m.getName() + " is fast asleep!");
 
             return false;
         }
@@ -565,18 +568,18 @@ public class Battle
         {
             if (Math.random() < 0.25)
             {
-                channel.queue(m.name + "'s fully paralyzed!");
+                channel.queue(m.getName() + "'s fully paralyzed!");
                 return false;
             }
         }
         else if (m.status == Monster.frozen)
         {
-            channel.queue(m.name + " is frozen solid!");
+            channel.queue(m.getName() + " is frozen solid!");
             return false;
         }
         else if (m.flinched)
         {
-            channel.queue(m.name + " flinched!");
+            channel.queue(m.getName() + " flinched!");
             return false;
         }
         else if (m.confuseTurns > 0)
@@ -584,10 +587,10 @@ public class Battle
             m.confuseTurns--;
 
             if (m.confuseTurns <= 0)
-                channel.queue(m.name + "'s confused no more!");
+                channel.queue(m.getName() + "'s confused no more!");
             else
             {
-                channel.queue(m.name + " is confused!");
+                channel.queue(m.getName() + " is confused!");
 
                 if (Math.random() < 0.5)
                 {
@@ -598,7 +601,7 @@ public class Battle
                     if (m.hp < 0)
                         m.hp = 0;
 
-                    channel.queue(m.name + "'s HP: " + m.hp + "/" + m.maxHp);
+                    channel.queue(m.getName() + "'s HP: " + m.hp + "/" + m.maxHp);
 
                     return false;
                 }
@@ -613,13 +616,13 @@ public class Battle
         if (m.status == Monster.poisoned || m.status == Monster.burned)
         {
             if (m.status == Monster.burned)
-                channel.queue(m.name + "'s hurt by the burn!");
+                channel.queue(m.getName() + "'s hurt by the burn!");
             else
-                channel.queue(m.name + "'s hurt by poison!");
+                channel.queue(m.getName() + "'s hurt by poison!");
 
             m.hp = Math.max(m.hp - Math.max(m.maxHp / 16, 1), 0);
 
-            channel.queue(m.name + "'s HP: " + m.hp + "/" + m.maxHp);
+            channel.queue(m.getName() + "'s HP: " + m.hp + "/" + m.maxHp);
         }
 
     }

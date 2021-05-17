@@ -1,5 +1,8 @@
-package jigglybot;
+package jigglybot.dialog;
 
+import jigglybot.ChannelWrapper;
+import jigglybot.Dialog;
+import jigglybot.UserWrapper;
 import jigglybot.monster.Monster;
 
 import java.util.ArrayList;
@@ -20,14 +23,14 @@ public class DialogReleaseMonsters extends Dialog
         StringBuilder mons = new StringBuilder();
 
         if (monsters.size() == 1)
-            mons = new StringBuilder(monsters.get(0).name + " is");
+            mons = new StringBuilder(monsters.get(0).getName() + " is");
         else if (monsters.size() == 2)
-            mons = new StringBuilder(monsters.get(0).name + " and " + monsters.get(1).name + " are");
+            mons = new StringBuilder(monsters.get(0).getName() + " and " + monsters.get(1).getName() + " are");
         else
         {
             for (int i = 0; i < monsters.size(); i++)
             {
-                mons.append(monsters.get(i).name);
+                mons.append(monsters.get(i).getName());
 
                 if (i < monsters.size() - 1)
                     mons.append(", ");
@@ -55,14 +58,14 @@ public class DialogReleaseMonsters extends Dialog
             StringBuilder mons = new StringBuilder();
 
             if (monsters.size() == 1)
-                mons = new StringBuilder(monsters.get(0).name + " was");
+                mons = new StringBuilder(monsters.get(0).getName() + " was");
             else if (monsters.size() == 2)
-                mons = new StringBuilder(monsters.get(0).name + " and " + monsters.get(1).name + " were");
+                mons = new StringBuilder(monsters.get(0).getName() + " and " + monsters.get(1).getName() + " were");
             else
             {
                 for (int i = 0; i < monsters.size(); i++)
                 {
-                    mons.append(monsters.get(i).name);
+                    mons.append(monsters.get(i).getName());
 
                     if (i < monsters.size() - 1)
                         mons.append(", ");

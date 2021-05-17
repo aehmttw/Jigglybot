@@ -2,6 +2,8 @@ package jigglybot;
 
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.channel.MessageChannel;
+import discord4j.core.spec.Spec;
+import jigglybot.dialog.DialogPickNickname;
 import jigglybot.item.Item;
 import jigglybot.monster.Monster;
 import jigglybot.monster.Species;
@@ -25,12 +27,19 @@ public class UserWrapper implements ICanBattle
     public boolean initialized = false;
     public boolean inBattle = false;
 
+    public int[] dex = new int[Species.currentID];
+
     public ArrayList<Item> items = new ArrayList<>();
 
     public UserWrapper(long id)
     {
         //items.add(new Item())
         this.id = id;
+
+        this.dex[Species.by_name.get("bulbasaur").id] = 1;
+        this.dex[Species.by_name.get("charmander").id] = 1;
+        this.dex[Species.by_name.get("squirtle").id] = 1;
+        this.dex[Species.by_name.get("pikachu").id] = 1;
 
         this.load();
     }
@@ -51,12 +60,14 @@ public class UserWrapper implements ICanBattle
         return w;
     }
 
-    public void pickStarter(MessageChannel c, Species s)
+    public void pickStarter(ChannelWrapper c, Species s)
     {
         this.initialized = true;
-        this.squad[0] = new Monster(s, 5);
-        this.squad[0].setOwner(this);
-        c.createMessage("Congratulations! You have received " + this.squad[0].name + "!").block();
+        Monster m = new Monster(s, 5);
+        m.setOwner(this);
+        c.messageChannel.createMessage("Congratulations! You have received " + m.getName() + "!").block();
+        c.currentDialog = new DialogPickNickname(c, this, m);
+        c.currentDialog.execute();
     }
 
     @Override
@@ -74,8 +85,8 @@ public class UserWrapper implements ICanBattle
     @Override
     public void queryMove(ChannelWrapper cw, Monster m)
     {
-        StringBuilder s = new StringBuilder("What will " + this.name + " do?\n" +
-                "```\nFIGHT\n");
+        StringBuilder s = new StringBuilder("What will " + m.getName() + " do?\n" +
+                "```\nFIGHT - " + m.getDisplayString(0).substring(3));
 
         for (int i = 0; i < m.moves.length; i++)
         {
@@ -125,6 +136,16 @@ public class UserWrapper implements ICanBattle
                 pw.println(m.toString());
             }
 
+            pw.println("dex");
+
+            StringBuilder s = new StringBuilder();
+            for (int i = 0; i < this.dex.length; i++)
+            {
+                s.append(this.dex[i]).append(",");
+            }
+
+            pw.println(s.substring(0, s.length() - 1));
+
             pw.close();
 
             return true;
@@ -155,6 +176,8 @@ public class UserWrapper implements ICanBattle
                     mode = 1;
                 else if (line.equals("storage"))
                     mode = 2;
+                else if (line.equals("dex"))
+                    mode = 3;
                 else
                 {
                     if (mode == 1)
@@ -167,12 +190,33 @@ public class UserWrapper implements ICanBattle
                     {
                         this.storage.add(new Monster(line, this));
                     }
+                    else if (mode == 3)
+                    {
+                        String[] s = line.split(",");
+
+                        for (int i = 0; i < s.length; i++)
+                        {
+                            this.dex[i] = Integer.parseInt(s[i]);
+                        }
+                    }
                 }
 
                 line = br.readLine();
             }
 
             br.close();
+
+            for (Monster m : this.squad)
+            {
+                if (m != null)
+                    this.dex[m.species.id] = 2;
+            }
+
+            for (Monster m : this.storage)
+            {
+                if (m != null)
+                    this.dex[m.species.id] = 2;
+            }
         }
         catch (Exception e)
         {
@@ -218,17 +262,16 @@ public class UserWrapper implements ICanBattle
                 s.append(this.squad[i].getDisplayString(i));
         }
 
-        if (setting.location.hasHeal)
+        if (setting.location.hasCenter)
             s.append("You can DEPOSIT or WITHDRAW POKéMON into the STORAGE PC!");
 
         if (this.storage.size() > 0)
         {
-            s.append("``````Your POKéMON storage PC:\n");
-
-            if (!setting.location.hasHeal)
+            if (!setting.location.hasCenter)
                 s.append("You also have ").append(this.storage.size()).append(" other POKéMON in STORAGE! (Access STORAGE PC from a POKéMON CENTER!)");
             else
             {
+                s.append("``````Your POKéMON storage PC:\n");
 
                 for (int i = this.page * entries_per_page; i < Math.min(this.storage.size(), (this.page + 1) * entries_per_page); i++)
                 {

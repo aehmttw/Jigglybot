@@ -1,8 +1,11 @@
 package jigglybot.monster;
 
-import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.MessageCreateSpec;
+import jigglybot.ChannelWrapper;
+import jigglybot.UserWrapper;
 import jigglybot.battle.action.Move;
+import jigglybot.location.Location;
+import jigglybot.location.SpawnEntry;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -70,15 +73,56 @@ public class Species
         this(name, type1, type1, baseHP, baseAttack, baseDefense, baseSpeed, baseSpecial, xpAward, xpGain, catchRate);
     }
 
-    public void printDexEntry(MessageChannel c)
+    public void printDexEntry(ChannelWrapper c, UserWrapper user, boolean queue)
     {
-        String s = this.id + ". " + this.name.toUpperCase() + "\n";
+        if (user.dex[this.id] <= 0)
+        {
+            if (!queue)
+               c.messageChannel.createMessage("You have not discovered this POKéMON yet!").block();
+            else
+                c.queue("You have not discovered this POKéMON yet!");
 
-        s += this.kind + "\n";
-        s += "HT " + this.height + "\n";
-        s += "WT " + Integer.parseInt(this.weight) / 10.0 + "lb\n";
+            return;
+        }
 
-        s += this.description;
+        StringBuilder s = new StringBuilder(this.id + ". " + this.name.toUpperCase() + "\n");
+
+        s.append(this.kind).append("\n");
+
+        if (user.dex[this.id] >= 2)
+        {
+            s.append("```");
+            s.append("HT ").append(this.height).append("\n");
+            s.append("WT ").append(Integer.parseInt(this.weight) / 10.0).append("lb\n");
+
+            s.append(this.description);
+            s.append("```");
+        }
+
+        ArrayList<Location> spawns = new ArrayList<>();
+        for (Location l: Location.allLocations)
+        {
+            for (SpawnEntry e: l.spawnEntries)
+            {
+                if (e.species == this)
+                {
+                    spawns.add(l);
+                    break;
+                }
+            }
+        }
+
+        s.append("```").append(this.name).append("'s NEST:\n");
+
+        if (spawns.isEmpty())
+            s.append("AREA UNKNOWN");
+
+        for (Location l: spawns)
+        {
+            s.append(l.name).append("\n");
+        }
+
+        s.append("```");
 
         /*if (this.type1 != this.type2)
             s += jigglybot.monster.Type.getTypeString(this.type1) + " ";
@@ -91,18 +135,23 @@ public class Species
         s += "SPEED " + this.baseSpeed + "\n";
         s += "SPECIAL " + this.baseSpecial;*/
 
-        c.createMessage(new Consumer<MessageCreateSpec>()
+        String img = ("/front/" + name).replace("♂", "m").replace("♀", "f").replace("'", "").toLowerCase() + ".png";
+
+        if (!queue)
         {
-            @Override
-            public void accept(MessageCreateSpec messageCreateSpec)
+            c.messageChannel.createMessage(new Consumer<MessageCreateSpec>()
             {
-                messageCreateSpec.addFile("/icon.png", getClass().getResourceAsStream(("/front/" + name)
-                        .replace("♂", "m").replace("♀", "f").replace("'", "").toLowerCase() + ".png"));
-            }
-        }).block();
+                @Override
+                public void accept(MessageCreateSpec messageCreateSpec)
+                {
+                    messageCreateSpec.addFile("/icon.png", getClass().getResourceAsStream(img));
+                }
+            }).block();
 
-        c.createMessage(s).block();
-
+            c.messageChannel.createMessage(s.toString()).block();
+        }
+        else
+            c.queue("*" + img + "*" + s);
     }
 
     public static void setup()

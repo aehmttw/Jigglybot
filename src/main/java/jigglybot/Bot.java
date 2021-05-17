@@ -10,8 +10,9 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.Reaction;
 import discord4j.core.spec.MessageCreateSpec;
 import jigglybot.battle.Battle;
-import jigglybot.battle.action.Move;
 import jigglybot.battle.action.MoveList;
+import jigglybot.dialog.DialogEraseAllData;
+import jigglybot.dialog.DialogReleaseMonsters;
 import jigglybot.location.Location;
 import jigglybot.monster.Dex;
 import jigglybot.monster.Monster;
@@ -25,6 +26,10 @@ public class Bot
 {
     public static String prefix = "-";
 
+    public static String token;
+    public static DiscordClient client;
+    public static GatewayDiscordClient gateway;
+
     public static void main(final String[] args)
     {
         Species.setup();
@@ -34,9 +39,9 @@ public class Bot
 
         new File(UserWrapper.save_dir).mkdirs();
 
-        final String token = args[0];
-        final DiscordClient client = DiscordClient.create(token);
-        final GatewayDiscordClient gateway = client.login().block();
+        token = args[0];
+        client = DiscordClient.create(token);
+        gateway = client.login().block();
 
         gateway.on(MessageCreateEvent.class).subscribe(event ->
         {
@@ -127,19 +132,19 @@ public class Bot
                     {
                         case "1":
                         case "BULBASAUR":
-                            user.pickStarter(channel, Species.by_name.get("bulbasaur"));
+                            user.pickStarter(setting, Species.by_name.get("bulbasaur"));
                             break;
                         case "2":
                         case "CHARMANDER":
-                            user.pickStarter(channel, Species.by_name.get("charmander"));
+                            user.pickStarter(setting, Species.by_name.get("charmander"));
                             break;
                         case "3":
                         case "SQUIRTLE":
-                            user.pickStarter(channel, Species.by_name.get("squirtle"));
+                            user.pickStarter(setting, Species.by_name.get("squirtle"));
                             break;
                         case "4":
                         case "PIKACHU":
-                            user.pickStarter(channel, Species.by_name.get("pikachu"));
+                            user.pickStarter(setting, Species.by_name.get("pikachu"));
                             break;
                         default:
                             channel.createMessage("Invalid POKéMON specified!").block();
@@ -167,13 +172,52 @@ public class Bot
                 setting.currentDialog.execute();
             }
 
-            if (content.startsWith("pokemon"))
+            if (content.startsWith("pokemon") || content.startsWith("pokémon"))
             {
-                user.printMonsters(setting);
+                String[] s = content.split(" ");
+
+                if (s.length > 1)
+                {
+                    try
+                    {
+                        user.squad[Integer.parseInt(s[1]) - 1].printStats(setting);
+                    }
+                    catch (Exception e)
+                    {
+                        channel.createMessage("Invalid POKéMON number specified!").block();
+                    }
+                }
+                else
+                    user.printMonsters(setting);
+            }
+
+            if (content.startsWith("stats"))
+            {
+                String[] s = content.split(" ");
+
+                if (s.length > 1)
+                {
+                    try
+                    {
+                        user.squad[Integer.parseInt(s[1]) - 1].printStats(setting);
+                    }
+                    catch (Exception e)
+                    {
+                        channel.createMessage("Invalid POKéMON number specified!").block();
+                    }
+                }
+                else
+                    setting.messageChannel.createMessage("Please supply a POKéMON number to show stats of!").block();
             }
 
             if (content.startsWith("swap"))
             {
+                if (user.inBattle)
+                {
+                    setting.messageChannel.createMessage("Cannot swap POKéMON in battle!").block();
+                    return;
+                }
+
                 String[] s = content.split(" ");
 
                 try
@@ -187,7 +231,7 @@ public class Bot
                         Monster temp = user.squad[first];
                         user.squad[first] = user.squad[second];
                         user.squad[second] = temp;
-                        setting.messageChannel.createMessage("Swapped " + user.squad[first].name + " and " + user.squad[second].name + "!").block();
+                        setting.messageChannel.createMessage("Swapped " + user.squad[first].getName() + " and " + user.squad[second].getName() + "!").block();
                         user.printMonsters(setting);
                     }
                     else
@@ -203,7 +247,7 @@ public class Bot
             {
                 if (user.inBattle)
                     channel.createMessage("Finish the battle first!").block();
-                else if (!setting.location.hasHeal)
+                else if (!setting.location.hasCenter)
                     channel.createMessage("There is no POKéMON CENTER in " + setting.location.name + "!").block();
                 else
                 {
@@ -233,7 +277,7 @@ public class Bot
             {
                 if (user.inBattle)
                     channel.createMessage("Finish the battle first!").block();
-                else if (!setting.location.hasHeal)
+                else if (!setting.location.hasCenter)
                     channel.createMessage("There is no POKéMON CENTER in " + setting.location.name + "!").block();
                 else
                 {
@@ -257,7 +301,7 @@ public class Bot
                                 user.squad[i] = null;
                             }
 
-                            setting.messageChannel.createMessage("Sent " + mon.name + " to STORAGE PC!").block();
+                            setting.messageChannel.createMessage("Sent " + mon.getName() + " to STORAGE PC!").block();
                             user.printMonsters(setting);
                         }
                         else
@@ -274,7 +318,7 @@ public class Bot
             {
                 if (user.inBattle)
                     channel.createMessage("Finish the battle first!").block();
-                else if (!setting.location.hasHeal)
+                else if (!setting.location.hasCenter)
                     channel.createMessage("There is no POKéMON CENTER in " + setting.location.name + "!").block();
                 else
                 {
@@ -301,7 +345,7 @@ public class Bot
                             else
                             {
                                 Monster mon = user.storage.remove(index);
-                                setting.messageChannel.createMessage("Took " + mon.name + " from STORAGE PC!").block();
+                                setting.messageChannel.createMessage("Took " + mon.getName() + " from STORAGE PC!").block();
                                 user.squad[free] = mon;
 
                                 user.printMonsters(setting);
@@ -321,7 +365,7 @@ public class Bot
             {
                 if (user.inBattle)
                     channel.createMessage("Finish the battle first!").block();
-                else if (!setting.location.hasHeal)
+                else if (!setting.location.hasCenter)
                     channel.createMessage("There is no POKéMON CENTER in " + setting.location.name + "!").block();
                 else
                 {
@@ -382,7 +426,7 @@ public class Bot
                         }
                     }).block();
 
-                    channel.createMessage("Wild L" + monster.level + " " + monster.name.toUpperCase() + " appeared!\nYou can JOIN the fight!").block();
+                    channel.createMessage("Wild L" + monster.level + " " + monster.getName().toUpperCase() + " appeared!\nYou can JOIN the fight!").block();
                     setting.currentBattle = new Battle(setting, monster);
                 }
             }
@@ -424,7 +468,7 @@ public class Bot
             {
                 if (user.inBattle)
                     channel.createMessage("Finish the battle first!").block();
-                else if (!setting.location.hasHeal)
+                else if (!setting.location.hasCenter)
                     channel.createMessage("There is no POKéMON CENTER in " + setting.location.name + "!").block();
                 else
                 {
@@ -480,10 +524,35 @@ public class Bot
                         StringBuilder s1 = new StringBuilder();
                         int rows = 0;
 
+                        int lastEntry = 0;
                         for (int i: Species.by_num.keySet())
                         {
+                            if (user.dex[i] > 0)
+                                lastEntry = i;
+                        }
+
+                        if (lastEntry == 0)
+                            s.append("You must START first!");
+
+                        for (int i: Species.by_num.keySet())
+                        {
+                            if (i > lastEntry)
+                                break;
+
                             in++;
-                            s1.append(String.format("%3d", i)).append(". ").append(Species.by_num.get(i).name);
+                            s1.append(String.format("%3d", i)).append(". ");
+
+                            if (user.dex[i] <= 0)
+                                s1.append("\u25CE----------");
+                            else
+                            {
+                                if (user.dex[i] >= 2)
+                                    s1.append("\u25C9");
+                                else
+                                    s1.append("\u25CE");
+
+                                s1.append(Species.by_num.get(i).name);
+                            }
 
                             while (s1.length() < 17 * in)
                                 s1.append(" ");
@@ -520,7 +589,7 @@ public class Bot
                             if (s == null)
                                 fail = true;
                             else
-                                s.printDexEntry(channel);
+                                s.printDexEntry(setting, user, false);
                         }
                         catch (Exception e)
                         {
@@ -529,7 +598,7 @@ public class Bot
                             if (s == null)
                                 fail = true;
                             else
-                                s.printDexEntry(channel);
+                                s.printDexEntry(setting, user, false);
                         }
 
                         if (fail)
@@ -599,8 +668,11 @@ public class Bot
 
         s.append("Things to do here:\n");
 
-        if (l.hasHeal)
+        if (l.hasCenter)
+        {
             s.append("HEAL your POKéMON at the POKéMON CENTER!\n");
+            s.append("DEPOSIT, WITHDRAW, or RELEASE POKéMON with the POKéMON CENTER's STORAGE PC!\n");
+        }
 
         if (!l.spawnEntries.isEmpty())
             s.append("Encounter wild POKéMON!\n");

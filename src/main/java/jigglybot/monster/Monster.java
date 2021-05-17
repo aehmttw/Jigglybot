@@ -1,11 +1,17 @@
 package jigglybot.monster;
 
+import discord4j.common.util.Snowflake;
+import discord4j.core.spec.MessageCreateSpec;
+import jigglybot.Bot;
 import jigglybot.ChannelWrapper;
 import jigglybot.ICanBattle;
 import jigglybot.UserWrapper;
 import jigglybot.battle.action.Move;
 import jigglybot.battle.action.MoveList;
 import jigglybot.item.PokeBall;
+
+import java.util.ArrayList;
+import java.util.function.Consumer;
 
 public class Monster implements ICanBattle
 {
@@ -81,6 +87,10 @@ public class Monster implements ICanBattle
         this.moves[0] = MoveList.allMoves.get((int) (MoveList.allMoves.size() * Math.random()));
         this.moves[1] = MoveList.allMoves.get((int) (MoveList.allMoves.size() * Math.random()));
         this.moves[2] = MoveList.allMoves.get((int) (MoveList.allMoves.size() * Math.random()));
+        this.movePP[0] = this.moves[0].maxPP;
+        this.movePP[1] = this.moves[1].maxPP;
+        this.movePP[2] = this.moves[2].maxPP;
+
     }
 
     public Monster(String s, UserWrapper owner)
@@ -109,11 +119,15 @@ public class Monster implements ICanBattle
 
     public void recalculateStats()
     {
+        int prevMaxHP = this.maxHp;
+
         this.maxHp = (int) (((this.species.baseHP + this.hpIv) * 2 + Math.sqrt(this.hpEv) / 4) * this.level / 100 + this.level + 10);
         this.attack = calculateStat(this.species.baseAttack, this.attackIv, this.attackEv, this.level);
         this.defense = calculateStat(this.species.baseDefense, this.defenseIv, this.defenseEv, this.level);
         this.speed = calculateStat(this.species.baseSpeed, this.speedIv, this.speedEv, this.level);
         this.special = calculateStat(this.species.baseSpecial, this.specialIv, this.specialEv, this.level);
+
+        this.hp += this.maxHp - prevMaxHP;
     }
 
     public boolean addXP(int xp)
@@ -243,13 +257,13 @@ public class Monster implements ICanBattle
         this.stages[stage] = Math.min(Math.max(this.stages[stage], -6), 6);
 
         if (prev - this.stages[stage] == 1)
-            return this.name + "'s " + getStageName(stage) + " fell!";
+            return this.getName() + "'s " + getStageName(stage) + " fell!";
         else if (prev - this.stages[stage] >= 2)
-            return this.name + "'s " + getStageName(stage) + " greatly fell!";
+            return this.getName() + "'s " + getStageName(stage) + " greatly fell!";
         else if (prev - this.stages[stage] == -1)
-            return this.name + "'s " + getStageName(stage) + " rose!";
+            return this.getName() + "'s " + getStageName(stage) + " rose!";
         else if (prev - this.stages[stage] <= -2)
-            return this.name + "'s " + getStageName(stage) + " greatly rose!";
+            return this.getName() + "'s " + getStageName(stage) + " greatly rose!";
         else
             return "Nothing happened!";
     }
@@ -329,15 +343,23 @@ public class Monster implements ICanBattle
     @Override
     public void queryMove(ChannelWrapper cw, Monster m)
     {
-        int count = 0;
+        ArrayList<Move> validMoves = new ArrayList<>();
 
         for (int i = 0; i < this.moves.length; i++)
         {
-            if (this.moves[count] != null)
-                count++;
+            Move move = this.moves[i];
+
+            if (move != null && this.movePP[i] > 0)
+                validMoves.add(move);
         }
 
-        cw.currentBattle.actionDecided(this.moves[(int) (Math.random() * count)]);
+        if (validMoves.size() > 0)
+            cw.currentBattle.actionDecided(validMoves.get((int) (Math.random() * validMoves.size())));
+        else
+        {
+            cw.queue(m.getName() + " has no moves left!");
+            cw.currentBattle.actionDecided(Move.struggle);
+        }
     }
 
     public String getStatusText()
@@ -448,12 +470,74 @@ public class Monster implements ICanBattle
         StringBuilder s = new StringBuilder();
 
         if (this.hp <= 0)
-            s.append(index + 1).append(". ").append(this.name).append(" FNT\n");
+            s.append(index + 1).append(". ").append(this.getName()).append(" FNT\n");
         else if (this.status != 0)
-            s.append(index + 1).append(". ").append(this.name).append(" ").append(this.getStatusText()).append(" (HP ").append(this.hp).append("/").append(this.maxHp).append(")\n");
+            s.append(index + 1).append(". ").append(this.getName()).append(" ").append(this.getStatusText()).append(" (HP ").append(this.hp).append("/").append(this.maxHp).append(")\n");
         else
-            s.append(index + 1).append(". ").append(this.name).append(" L").append(this.level).append(" (HP ").append(this.hp).append("/").append(this.maxHp).append(")\n");
+            s.append(index + 1).append(". ").append(this.getName()).append(" L").append(this.level).append(" (HP ").append(this.hp).append("/").append(this.maxHp).append(")\n");
 
         return s.toString();
+    }
+
+    public void printStats(ChannelWrapper cw)
+    {
+        StringBuilder s = new StringBuilder();
+        s.append("No. ").append(String.format("%03d\n", this.species.id));
+        s.append(this.getName()).append(" (").append(this.species.name.toUpperCase()).append(")\n");
+        s.append("```L").append(this.level).append("\nHP: ").append(this.hp).append("/").append(this.maxHp).append("\nSTATUS: ");
+
+        if (this.status == 0)
+            s.append("OK");
+        else
+            s.append(this.getStatusText());
+
+        s.append("\n``````ATTACK: ").append(this.attack).append("\nDEFENSE: ").append(this.defense).append("\nSPEED: ").append(this.speed).append("\nSPECIAL: ").append(this.special);
+        s.append("``````TYPE1: ").append(Type.getTypeString(this.species.type1)).append("\n");
+        if (this.species.type2 != this.species.type1)
+            s.append("TYPE2: ").append(Type.getTypeString(this.species.type2)).append("\n");
+        s.append("OT: ").append(Bot.client.getUserById(Snowflake.of(this.originalTrainer)).getData().block().username()).append("\n");
+        s.append("``````EXP POINTS: ").append(this.xp).append("\n");
+
+        if (this.level < 100)
+            s.append("LEVEL UP: ").append(Monster.getLevelXP(this.species.xpGain, this.level + 1) - this.xp).append(" to L").append(this.level + 1);
+
+        s.append("``````MOVES:\n");
+
+        for (int i = 0; i < this.moves.length; i++)
+        {
+            if (this.moves[i] != null)
+                s.append(i + 1).append(". ").append(this.moves[i].name).append(" (PP ").append(this.movePP[i]).append("/").append(this.moves[i].maxPP).append(")\n");
+            else
+                s.append("-");
+        }
+
+        s.append("```");
+
+        cw.messageChannel.createMessage(new Consumer<MessageCreateSpec>()
+        {
+            @Override
+            public void accept(MessageCreateSpec messageCreateSpec)
+            {
+                messageCreateSpec.addFile("/icon.png", getClass().getResourceAsStream(("/front/" + species.name.toUpperCase())
+                        .replace("♂", "m").replace("♀", "f").replace("'", "").toLowerCase() + ".png"));
+            }
+        }).block();
+
+        cw.messageChannel.createMessage(s.toString()).block();
+    }
+
+    public boolean isShiny()
+    {
+        return this.speedIv == 10 && this.defenseIv == 10 && this.specialIv == 10 &&
+                (this.attackIv == 2 || this.attackIv == 3 || this.attackIv == 6 || this.attackIv == 7 ||
+                        this.attackIv == 10 || this.attackIv == 11 || this.attackIv == 14 || this.attackIv == 15);
+    }
+
+    public String getName()
+    {
+        if (this.isShiny())
+            return this.name + "\u2728";
+        else
+            return this.name;
     }
 }

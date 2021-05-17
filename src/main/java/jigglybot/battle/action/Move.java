@@ -80,14 +80,14 @@ public class Move implements IAction
             if (crit)
                 cw.queue("Critical hit!");
 
-            cw.queue(Type.getEffectiveMessage(this.type, defender.species.type1, defender.species.type2, defender.name));
+            cw.queue(Type.getEffectiveMessage(this.type, defender.species.type1, defender.species.type2, defender.getName()));
 
             defender.hp -= Monster.getDamage(attacker, defender, this.power, this.isSpecial, crit, mod);
 
             if (defender.hp < 0)
                 defender.hp = 0;
 
-            cw.queue(defender.name + "'s HP: " + defender.hp + "/" + defender.maxHp);
+            cw.queue(defender.getName() + "'s HP: " + defender.hp + "/" + defender.maxHp);
 
             if (Math.random() < this.flinchChance)
                 defender.flinched = true;
@@ -96,9 +96,9 @@ public class Move implements IAction
         this.postDamageBehavior = (monster, enemy, damage, cw) ->
         {
             if (recoil > 0)
-                cw.queue(monster.name + "'s hit with recoil!");
+                cw.queue(monster.getName() + "'s hit with recoil!");
             else if (recoil < 0)
-                cw.queue("Sucked health from " + enemy.name + "!");
+                cw.queue("Sucked health from " + enemy.getName() + "!");
 
             monster.hp -= damage * this.recoil;
 
@@ -108,7 +108,7 @@ public class Move implements IAction
             monster.hp = Math.min(monster.maxHp, Math.max(0, monster.hp));
 
             if (recoil != 0)
-                cw.queue(monster.name + "'s HP: " + monster.hp + "/" + monster.maxHp);
+                cw.queue(monster.getName() + "'s HP: " + monster.hp + "/" + monster.maxHp);
         };
 
         this.effectBehavior = (monster, enemy, cw) ->
@@ -132,7 +132,7 @@ public class Move implements IAction
                         if (this.statusEffect != Monster.confused)
                             m.status = this.statusEffect;
 
-                        cw.queue(m.name + Monster.getEffectMessage(this.statusEffect));
+                        cw.queue(m.getName() + Monster.getEffectMessage(this.statusEffect));
 
                         if (this.statusEffect == Monster.asleep)
                             m.sleepTurns = (int) (Math.random() * 7 + 1);
@@ -151,17 +151,23 @@ public class Move implements IAction
             if (enemy.status == Monster.frozen && this.type == Type.fire)
             {
                 enemy.status = 0;
-                cw.queue("Fire defrosted " + enemy.name + "!");
+                cw.queue("Fire defrosted " + enemy.getName() + "!");
             }
         };
     }
 
     public void execute(Monster attacker, Monster defender, ChannelWrapper cw, ArrayList<Monster> participants)
     {
+        for (int i = 0; i < attacker.moves.length; i++)
+        {
+            if (attacker.moves[i] == this)
+                attacker.movePP[i]--;
+        }
+
         if (this == Move.none)
             return;
 
-        cw.queue(attacker.name + " used " + this.name + "!");
+        cw.queue(attacker.getName() + " used " + this.name + "!");
 
         int a = (int) (accuracy * attacker.getStageMultiplier(Monster.stage_accuracy) * defender.getStageMultiplier(Monster.stage_evasion));
         int r = (int) (Math.random() * 100);
@@ -180,10 +186,10 @@ public class Move implements IAction
         }
 
         if (this.power > 0)
-            cw.queue(attacker.name + "'s attack missed!");
+            cw.queue(attacker.getName() + "'s attack missed!");
         else if (isSpecial)
             cw.queue("But, it failed!");
         else
-            cw.queue("It didn't affect " + defender.name + "!");
+            cw.queue("It didn't affect " + defender.getName() + "!");
     }
 }
