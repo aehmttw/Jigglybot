@@ -341,7 +341,7 @@ public class Monster implements ICanBattle
     }
 
     @Override
-    public void queryMove(ChannelWrapper cw, Monster m)
+    public void queryMove(ChannelWrapper cw, Monster m, Monster enemy)
     {
         ArrayList<Move> validMoves = new ArrayList<>();
 

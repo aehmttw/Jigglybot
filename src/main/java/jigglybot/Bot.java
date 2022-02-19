@@ -10,6 +10,7 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.Reaction;
 import discord4j.core.spec.MessageCreateSpec;
 import jigglybot.battle.Battle;
+import jigglybot.battle.Trainer;
 import jigglybot.battle.action.MoveList;
 import jigglybot.dialog.DialogEraseAllData;
 import jigglybot.dialog.DialogReleaseMonsters;
@@ -66,6 +67,7 @@ public class Bot
             if (content.startsWith("next") || content.equals("n") || content.equals(""))
             {
                 setting.advance();
+                return;
             }
 
             if (!setting.messages.isEmpty())
@@ -431,8 +433,21 @@ public class Bot
                 }
             }
 
+            if (content.startsWith("battle"))
+            {
+                if (setting.currentBattle != null)
+                    channel.createMessage("Finish the battle first!").block();
+                else
+                {
+                    Trainer trainer = new Trainer();
+
+                    channel.createMessage(trainer.name + " wants to fight!\nYou can JOIN the fight!").block();
+                    setting.currentBattle = new Battle(setting, trainer);
+                }
+            }
+
             if (content.startsWith("join") && setting.currentBattle != null)
-                setting.currentBattle.join(user);
+                setting.currentBattle.join(user, null);
 
             if (content.startsWith("fight") && setting.currentBattle != null)
             {
@@ -452,10 +467,25 @@ public class Bot
 
             if (content.startsWith("switch") && setting.currentBattle != null)
             {
-                if (!content.contains(" "))
-                    setting.currentBattle.inputSwitch(user, null);
+                if (setting.currentBattle.player1 == null)
+                {
+                    if (setting.currentBattle.prevP1 != user)
+                        setting.messageChannel.createMessage("You must JOIN the battle!").block();
+                    else
+                    {
+                        if (!content.contains(" "))
+                            setting.messageChannel.createMessage("Please specify POKéMON NO. or NAME!").block();
+                        else
+                            setting.currentBattle.join(user, content.substring(content.indexOf(" ") + 1));
+                    }
+                }
                 else
-                    setting.currentBattle.inputSwitch(user, content.substring(content.indexOf(" ") + 1));
+                {
+                    if (!content.contains(" "))
+                        setting.currentBattle.inputSwitch(user, null);
+                    else
+                        setting.currentBattle.inputSwitch(user, content.substring(content.indexOf(" ") + 1));
+                }
             }
 
             if (content.startsWith("catch") && setting.currentBattle != null)
@@ -661,7 +691,7 @@ public class Bot
     {
         Location l = ChannelWrapper.get(channel).location;
 
-        StringBuilder s = new StringBuilder();
+        StringBuilder s = new StringBuilder("```");
 
         if (showCurrent)
             s.append("Currently in ").append(l.name).append("\n\n");
@@ -682,6 +712,6 @@ public class Bot
         for (int i = 0; i < l.neighbors.length; i++)
             s.append(i + 1).append(". ").append(l.neighbors[i].name).append("\n");
 
-        channel.createMessage(s.toString().substring(0, s.length() - 1)).block();
+        channel.createMessage(s.toString().substring(0, s.length() - 1) + "```").block();
     }
 }

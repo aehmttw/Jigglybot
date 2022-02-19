@@ -1,14 +1,15 @@
 package jigglybot;
 
 import discord4j.core.object.entity.Member;
-import discord4j.core.object.entity.channel.MessageChannel;
-import discord4j.core.spec.Spec;
 import jigglybot.dialog.DialogPickNickname;
 import jigglybot.item.Item;
 import jigglybot.monster.Monster;
 import jigglybot.monster.Species;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -75,7 +76,7 @@ public class UserWrapper implements ICanBattle
     {
         for (int i = 0; i < this.squad.length; i++)
         {
-            if (this.squad[i].hp > 0)
+            if (this.squad[i] != null && this.squad[i].hp > 0)
                 return this.squad[i];
         }
 
@@ -83,10 +84,13 @@ public class UserWrapper implements ICanBattle
     }
 
     @Override
-    public void queryMove(ChannelWrapper cw, Monster m)
+    public void queryMove(ChannelWrapper cw, Monster m, Monster enemy)
     {
-        StringBuilder s = new StringBuilder("What will " + m.getName() + " do?\n" +
-                "```\nFIGHT - " + m.getDisplayString(0).substring(3));
+        StringBuilder s = new StringBuilder();
+
+        s.append(m.getDisplayString(0).substring(3)).append("    vs. ").append(enemy.getDisplayString(0).substring(3));
+
+        s.append("\nWhat will ").append(m.getName()).append(" do?\n").append("```\nFIGHT\n");
 
         for (int i = 0; i < m.moves.length; i++)
         {
@@ -108,6 +112,12 @@ public class UserWrapper implements ICanBattle
 
         cw.queue(s.toString());
         cw.advance();
+    }
+
+    @Override
+    public String getName()
+    {
+        return this.name;
     }
 
     public boolean save()
@@ -254,6 +264,11 @@ public class UserWrapper implements ICanBattle
 
     public void printMonsters(ChannelWrapper setting)
     {
+        setting.messageChannel.createMessage(this.getMonstersString(setting)).block();
+    }
+
+    public String getMonstersString(ChannelWrapper setting)
+    {
         StringBuilder s = new StringBuilder("```Your POKéMON:\n");
 
         for (int i = 0; i < this.squad.length; i++)
@@ -262,12 +277,14 @@ public class UserWrapper implements ICanBattle
                 s.append(this.squad[i].getDisplayString(i));
         }
 
-        if (setting.location.hasCenter)
+        boolean pcAccess = setting.location.hasCenter && !inBattle;
+
+        if (pcAccess)
             s.append("You can DEPOSIT or WITHDRAW POKéMON into the STORAGE PC!");
 
         if (this.storage.size() > 0)
         {
-            if (!setting.location.hasCenter)
+            if (!pcAccess)
                 s.append("You also have ").append(this.storage.size()).append(" other POKéMON in STORAGE! (Access STORAGE PC from a POKéMON CENTER!)");
             else
             {
@@ -289,6 +306,7 @@ public class UserWrapper implements ICanBattle
         }
 
         s.append("```");
-        setting.messageChannel.createMessage(s.toString()).block();
+
+        return s.toString();
     }
 }

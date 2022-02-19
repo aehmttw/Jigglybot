@@ -304,7 +304,7 @@ public class MoveList
         psybeam.effectChance = 0.1;
         psybeam.statusEffect = Monster.confused;
 
-        Move psychic = new Move("psychic", Type.normal, 10, 90, 100);
+        Move psychic = new Move("psychic", Type.psychic, 10, 90, 100);
         psychic.stage = Monster.stage_special;
         psychic.stageAmount = -1;
         psychic.effectChance = 0.33;

@@ -8,5 +8,7 @@ public interface ICanBattle
 
     Monster getNextMonster();
 
-    void queryMove(ChannelWrapper cw, Monster m);
+    void queryMove(ChannelWrapper cw, Monster m, Monster enemy);
+
+    String getName();
 }

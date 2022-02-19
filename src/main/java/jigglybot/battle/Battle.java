@@ -18,6 +18,12 @@ public class Battle
     public UserWrapper player1;
     public ICanBattle player2;
 
+    public UserWrapper prevP1;
+    public ICanBattle prevP2;
+
+    public Monster prevP1Mon;
+    public Monster prevP2Mon;
+
     public Monster p1Mon;
     public Monster p2Mon;
 
@@ -44,8 +50,8 @@ public class Battle
     {
         this.channel = channel;
         this.player2 = challenger;
-        this.p2Mon = challenger.getNextMonster();
-        this.p2Participants.add(p2Mon);
+        //this.p2Mon = challenger.getNextMonster();
+        //this.p2Participants.add(p2Mon);
     }
 
     public Battle(ChannelWrapper channel, UserWrapper p1, UserWrapper p2)
@@ -59,7 +65,7 @@ public class Battle
         p2.inBattle = true;
     }
 
-    public void join(UserWrapper player)
+    public void join(UserWrapper player, String mon)
     {
         if (!player.initialized)
             channel.messageChannel.createMessage("You need to START first!").block();
@@ -80,32 +86,109 @@ public class Battle
                 }
             }
 
+            int index = -1;
+
+            if (this.prevP1Mon != null && this.prevP1Mon.hp > 0)
+            {
+                for (int i = 0; i < player.squad.length; i++)
+                {
+                    if (this.prevP1Mon == player.squad[i])
+                        index = i;
+                }
+            }
+
             if (!canJoin)
                 channel.messageChannel.createMessage("All your POKéMON have fainted! You need to HEAL!").block();
-            else
+            else if (mon != null)
             {
-                this.started = true;
+                try
+                {
+                    index = Integer.parseInt(mon) - 1;
+                }
+                catch (Exception e)
+                {
+                    for (int i = 0; i < player.squad.length; i++)
+                    {
+                        if (player.squad[i] != null && player.squad[i].name.equalsIgnoreCase(mon))
+                        {
+                            index = i;
+                            break;
+                        }
+                    }
+                }
+
+                canJoin = false;
+
+                if (player.squad[index] == null)
+                    this.channel.messageChannel.createMessage("Please specify POKéMON NO. or NAME!").block();
+                else if (player.squad[index].hp <= 0)
+                    this.channel.messageChannel.createMessage("There's no will to fight!").block();
+                else
+                    canJoin = true;
+            }
+
+            if (canJoin)
+            {
                 this.channel.messages.clear();
                 this.channel.activeMessage = -1;
+
+                if (!this.started)
+                    channel.queue(player.name + " joined the battle!");
 
                 if (this.p2Mon == null)
                 {
                     this.p2Mon = this.player2.getNextMonster();
+
+                    if (!this.p2Participants.contains(this.p2Mon))
+                        this.p2Participants.add(this.p2Mon);
+
                     this.p2Damage = 0;
+
+                    if (this.player2 instanceof Trainer)
+                    {
+                        String img = ("*" + "/front/" + p2Mon.species.name.toLowerCase())
+                                .replace("♂", "m").replace("♀", "f").replace("'", "").toLowerCase() + ".png*";
+
+                        channel.queue(img + ((Trainer) this.player2).name + " sent out " + this.p2Mon.name + "!");
+                    }
+
+                    this.p1Participants.clear();
                 }
 
-                this.p1Participants.clear();
                 this.player1 = player;
                 player.inBattle = true;
-                this.p1Mon = player.getNextMonster();
+
+                if (index == -1)
+                    this.p1Mon = player.getNextMonster();
+                else
+                    this.p1Mon = player.squad[index];
+
+                if (this.started)
+                {
+                    if (this.p1Mon != this.prevP1Mon && this.prevP1Mon != null && this.prevP1Mon.hp > 0)
+                    {
+                        if (this.p1Damage >= 0.7 * this.p2Mon.maxHp)
+                            channel.queue(prevP1Mon.getName() + " good! Come back!");
+                        else if (this.p1Damage >= 0.3 * this.p2Mon.maxHp)
+                            channel.queue(prevP1Mon.getName() + " OK! Come back!");
+                        else if (this.p1Damage >= 1)
+                            channel.queue(prevP1Mon.getName() + " Come back!");
+                        else
+                            channel.queue(prevP1Mon.getName() + " enough! Come back!");
+                    }
+
+                    if (player != this.prevP1)
+                        channel.queue(player.name + " took over!");
+                }
+
+                this.started = true;
+
                 this.p1Damage = 0;
                 this.player1.dex[this.p2Mon.species.id] = Math.max(this.player1.dex[this.p2Mon.species.id], 1);
 
                 this.p1Participants.add(p1Mon);
 
-                channel.queue(player.name + " joined the battle!");
-
-                String img = ("*" + "/back/" + p1Mon.species.name.toUpperCase())
+                String img = ("*" + "/back/" + p1Mon.species.name.toLowerCase())
                         .replace("♂", "m").replace("♀", "f").replace("'", "").toLowerCase() + "b.png*";
 
                 if (p2Mon == null)
@@ -268,7 +351,7 @@ public class Battle
 
     public void turnStart()
     {
-        player1.queryMove(this.channel, p1Mon);
+        player1.queryMove(this.channel, p1Mon, p2Mon);
     }
 
     public void actionDecided(IAction a)
@@ -306,7 +389,7 @@ public class Battle
             }
 
             this.p2sTurn = true;
-            this.player2.queryMove(this.channel, this.p2Mon);
+            this.player2.queryMove(this.channel, this.p2Mon, this.p1Mon);
         }
         else
         {
@@ -445,7 +528,7 @@ public class Battle
 
             if (!this.joinable)
             {
-                ((UserWrapper)this.player2).inBattle = false;
+                ((UserWrapper) this.player2).inBattle = false;
                 ((UserWrapper) this.player2).endBattle();
 
                 if (this.player1.getNextMonster() != null)
@@ -489,24 +572,44 @@ public class Battle
             this.turnStart();
         else
         {
+            this.prevP1Mon = null;
+            this.prevP1 = null;
+
+            if (this.player1.getNextMonster() != null)
+            {
+                this.prevP1 = this.player1;
+
+                if (this.p1Mon != null)
+                    this.prevP1Mon = this.p1Mon;
+            }
+
+            if (this.player2.getNextMonster() != null && this.joinable)
+            {
+                //this.p2Mon = this.player2.getNextMonster();
+                this.p2Damage = 0;
+                //this.p2Participants.add(p2Mon);
+
+                if (this.p2Mon == null)
+                    this.channel.queue(this.player2.getName() + " is about to use " + this.player2.getNextMonster().species.name.toUpperCase() + "!");
+
+                if (this.prevP1 == null)
+                    this.channel.queue("Whose POKéMON will JOIN next?");
+                else
+                {
+                    this.channel.queue("Will " + this.prevP1.getName() + " SWITCH POKéMON, or will someone else's POKéMON JOIN next?" + this.prevP1.getMonstersString(this.channel));
+                }
+            }
+            else
+            {
+                this.channel.queue(this.player2.getName() + " was defeated!");
+                this.channel.currentBattle = null;
+            }
+
             this.player1.inBattle = false;
             this.player1.endBattle();
             this.p1Mon = null;
             this.p1Damage = 0;
             this.player1 = null;
-
-            if (this.player2.getNextMonster() != null)
-            {
-                this.p2Mon = this.player2.getNextMonster();
-                this.p2Damage = 0;
-                this.p2Participants.add(p2Mon);
-                this.channel.queue("Whose POKéMON will JOIN next?");
-            }
-            else
-            {
-                this.channel.queue("Battle ended!");
-                this.channel.currentBattle = null;
-            }
 
             this.channel.advance();
         }
@@ -514,6 +617,24 @@ public class Battle
 
     public boolean testFaint()
     {
+        for (int i = 0; i < this.p1Participants.size(); i++)
+        {
+            if (this.p1Participants.get(i).hp <= 0)
+            {
+                this.p1Participants.remove(i);
+                i--;
+            }
+        }
+
+        for (int i = 0; i < this.p2Participants.size(); i++)
+        {
+            if (this.p2Participants.get(i).hp <= 0)
+            {
+                this.p2Participants.remove(i);
+                i--;
+            }
+        }
+
         boolean a = this.testFaint(this.p1Mon, this.p2Participants);
         boolean b = this.testFaint(this.p2Mon, this.p1Participants);
 
